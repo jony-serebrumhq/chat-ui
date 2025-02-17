@@ -9,13 +9,12 @@
     import { useSettingsStore } from "$lib/stores/settings";
     import { v4 as uuidv4 } from 'uuid';
     import { chatInputContent } from "$lib/stores/chatInput";
+    import { loginModalOpen } from "$lib/stores/loginModal";
 
     const settings = useSettingsStore();
     
     const dispatch = createEventDispatcher<{
-        setMessage: {
-            message: string;
-        }
+        message: string;
     }>();
 
     let age = $state(35);
@@ -63,15 +62,7 @@ Diet Preference: ${dietPreference}`;
     function handleSubmit(e: Event) {
         e.preventDefault();
         
-        const conversationId = $page.params.id;
-        
-        if (!conversationId) {
-            error.set("Please start a conversation first");
-            return;
-        }
-
-        // Set the content in the chat input store
-        chatInputContent.set(generatePrompt());
+        dispatch("message", generatePrompt());
     }
 </script>
 
@@ -193,7 +184,7 @@ Diet Preference: ${dietPreference}`;
             type="submit"
             class="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
         >
-            Generate Meal Plan
+            Start New Chat
         </button>
     </form>
 </div> 

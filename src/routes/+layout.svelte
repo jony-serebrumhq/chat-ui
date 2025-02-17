@@ -295,11 +295,14 @@
 
 	<nav class="grid max-h-screen grid-cols-1 overflow-hidden max-md:hidden">
 		<StatsForm 
-			on:setMessage={(event) => {
-				pendingMessage.set({
-					content: event.detail.message,
-					files: []
-				});
+			on:message={(ev) => {
+				if (data.loginRequired) {
+					ev.preventDefault();
+					$loginModalOpen = true;
+				} else {
+					// This will create a new conversation and send the message
+					goto(`${base}/models/${$settings.activeModel}?q=${encodeURIComponent(ev.detail)}`);
+				}
 			}}
 		/>
 	</nav>
