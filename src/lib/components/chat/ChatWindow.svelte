@@ -37,6 +37,7 @@
 	import { cubicInOut } from "svelte/easing";
 	import type { ToolFront } from "$lib/types/Tool";
 	import { loginModalOpen } from "$lib/stores/loginModal";
+	import { chatInputContent } from "$lib/stores/chatInput";
 
 	interface Props {
 		messages?: Message[];
@@ -66,7 +67,7 @@
 
 	let isReadOnly = $derived(!models.some((model) => model.id === currentModel.id));
 
-	let message: string = $state("");
+	let message = $state("");
 	let timeout: ReturnType<typeof setTimeout>;
 	let isSharedRecently = $state(false);
 	let editMsdgId: Message["id"] | null = $state(null);
@@ -83,6 +84,14 @@
 		retry: { id: Message["id"]; content?: string };
 		continue: { id: Message["id"] };
 	}>();
+
+	// Subscribe to the chat input store
+	$effect(() => {
+		if ($chatInputContent) {
+			message = $chatInputContent;
+			chatInputContent.set(""); // Clear the store after setting the message
+		}
+	});
 
 	const handleSubmit = () => {
 		if (loading) return;

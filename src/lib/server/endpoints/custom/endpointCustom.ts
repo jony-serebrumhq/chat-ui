@@ -52,6 +52,8 @@ export function endpointCustom(input: z.input<typeof endpointCustomParametersSch
 			throw new Error("No response text received from the API");
 		}
 
+		// const responseText="hello";
+
 		return (async function* () {
 			// Yield the entire response as a single token
 			yield {

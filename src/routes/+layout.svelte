@@ -294,6 +294,13 @@
 	{@render children?.()}
 
 	<nav class="grid max-h-screen grid-cols-1 overflow-hidden max-md:hidden">
-		<StatsForm />
+		<StatsForm 
+			on:setMessage={(event) => {
+				pendingMessage.set({
+					content: event.detail.message,
+					files: []
+				});
+			}}
+		/>
 	</nav>
 </div>

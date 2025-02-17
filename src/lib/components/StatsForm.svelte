@@ -2,16 +2,19 @@
     import { createEventDispatcher } from "svelte";
     import { goto } from "$app/navigation";
     import { base } from "$app/paths";
+    import { page } from "$app/stores";
     import { pendingMessage } from "$lib/stores/pendingMessage";
     import { error } from "$lib/stores/errors";
     import { ERROR_MESSAGES } from "$lib/stores/errors";
     import { useSettingsStore } from "$lib/stores/settings";
+    import { v4 as uuidv4 } from 'uuid';
+    import { chatInputContent } from "$lib/stores/chatInput";
 
     const settings = useSettingsStore();
     
     const dispatch = createEventDispatcher<{
-        submit: {
-            prompt: string;
+        setMessage: {
+            message: string;
         }
     }>();
 
@@ -45,7 +48,7 @@
     ];
 
     function generatePrompt() {
-        return `Generate a 7-day meal plan for a user with the following details:
+        return `Generate a 7-day meal plan for me with the following details:
 Age: ${age}
 Height: ${height} inches
 Current Weight: ${currentWeight} lb
@@ -57,43 +60,18 @@ Health Goal: ${healthGoal}
 Diet Preference: ${dietPreference}`;
     }
 
-    async function handleSubmit(e: Event) {
+    function handleSubmit(e: Event) {
         e.preventDefault();
-        const prompt = generatePrompt();
         
-        try {
-            // Create a new conversation first
-            const res = await fetch(`${base}/conversation`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: $settings.activeModel,
-                    preprompt: $settings.customPrompts[$settings.activeModel],
-                }),
-            });
-
-            if (!res.ok) {
-                error.set("Error while creating conversation, try again.");
-                console.error("Error while creating conversation: " + (await res.text()));
-                return;
-            }
-
-            const { conversationId } = await res.json();
-
-            // Set the prompt as pending message
-            pendingMessage.set({
-                content: prompt,
-                files: []
-            });
-
-            // Navigate to the new conversation
-            await goto(`${base}/conversation/${conversationId}`, { invalidateAll: true });
-        } catch (err) {
-            error.set(ERROR_MESSAGES.default);
-            console.error(err);
+        const conversationId = $page.params.id;
+        
+        if (!conversationId) {
+            error.set("Please start a conversation first");
+            return;
         }
+
+        // Set the content in the chat input store
+        chatInputContent.set(generatePrompt());
     }
 </script>
 
@@ -215,7 +193,7 @@ Diet Preference: ${dietPreference}`;
             type="submit"
             class="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
         >
-            Start Chat
+            Generate Meal Plan
         </button>
     </form>
 </div> 
