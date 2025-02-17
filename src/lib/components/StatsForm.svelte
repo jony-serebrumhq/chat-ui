@@ -1,17 +1,17 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import { goto } from "$app/navigation";
-    import { base } from "$app/paths";
-    import { pendingMessage } from "$lib/stores/pendingMessage";
-    import { error } from "$lib/stores/errors";
-    import { ERROR_MESSAGES } from "$lib/stores/errors";
-    import { useSettingsStore } from "$lib/stores/settings";
-
-    const settings = useSettingsStore();
     
     const dispatch = createEventDispatcher<{
         submit: {
-            prompt: string;
+            age: number;
+            height: number;
+            currentWeight: number;
+            targetWeight: number;
+            healthGoal: string;
+            dietPreference: string;
+            hasHeartDisease: boolean;
+            hasDiabetes: boolean;
+            hasKidneyDisease: boolean;
         }
     }>();
 
@@ -44,66 +44,26 @@
         'Mediterranean'
     ];
 
-    function generatePrompt() {
-        return `Generate a 7-day meal plan for a user with the following details:
-Age: ${age}
-Height: ${height} inches
-Current Weight: ${currentWeight} lb
-Target Weight: ${targetWeight} lb
-Heart Disease: ${hasHeartDisease ? 'Yes' : 'No'}
-Diabetic: ${hasDiabetes ? 'Yes' : 'No'}
-Kidney Disease: ${hasKidneyDisease ? 'Yes' : 'No'}
-Health Goal: ${healthGoal}
-Diet Preference: ${dietPreference}`;
-    }
-
-    async function handleSubmit(e: Event) {
+    function handleSubmit(e: Event) {
         e.preventDefault();
-        const prompt = generatePrompt();
-        
-        try {
-            // Create a new conversation first
-            const res = await fetch(`${base}/conversation`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: $settings.activeModel,
-                    preprompt: $settings.customPrompts[$settings.activeModel],
-                }),
-            });
-
-            if (!res.ok) {
-                error.set("Error while creating conversation, try again.");
-                console.error("Error while creating conversation: " + (await res.text()));
-                return;
-            }
-
-            const { conversationId } = await res.json();
-
-            // Set the prompt as pending message
-            pendingMessage.set({
-                content: prompt,
-                files: []
-            });
-
-            // Navigate to the new conversation
-            await goto(`${base}/conversation/${conversationId}`, { invalidateAll: true });
-        } catch (err) {
-            error.set(ERROR_MESSAGES.default);
-            console.error(err);
-        }
+        dispatch('submit', {
+            age,
+            height,
+            currentWeight,
+            targetWeight,
+            healthGoal,
+            dietPreference,
+            hasHeartDisease,
+            hasDiabetes,
+            hasKidneyDisease
+        });
     }
 </script>
 
 <div class="flex flex-col gap-4 p-4 bg-white dark:bg-gray-800 border-l dark:border-gray-700">
     <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Health Info</h2>
     
-    <form 
-        onsubmit={handleSubmit} 
-        class="flex flex-col gap-4"
-    >
+    <form on:submit={handleSubmit} class="flex flex-col gap-4">
         <div class="flex flex-col gap-2">
             <label for="age" class="text-sm text-gray-600 dark:text-gray-400">Age</label>
             <input
@@ -178,37 +138,35 @@ Diet Preference: ${dietPreference}`;
             </select>
         </div>
 
-        <div class="flex flex-col gap-2">
-            <fieldset class="flex flex-col gap-3 mt-2">
-                <legend class="text-sm text-gray-600 dark:text-gray-400">Medical Conditions</legend>
-                <div class="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="heartDisease"
-                        bind:checked={hasHeartDisease}
-                        class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
-                    />
-                    <label for="heartDisease" class="text-sm text-gray-600 dark:text-gray-400">Heart Disease</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="diabetes"
-                        bind:checked={hasDiabetes}
-                        class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
-                    />
-                    <label for="diabetes" class="text-sm text-gray-600 dark:text-gray-400">Diabetic</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="kidneyDisease"
-                        bind:checked={hasKidneyDisease}
-                        class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
-                    />
-                    <label for="kidneyDisease" class="text-sm text-gray-600 dark:text-gray-400">Kidney Disease</label>
-                </div>
-            </fieldset>
+        <div class="flex flex-col gap-3 mt-2">
+            <label class="text-sm text-gray-600 dark:text-gray-400">Medical Conditions</label>
+            <div class="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    id="heartDisease"
+                    bind:checked={hasHeartDisease}
+                    class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
+                />
+                <label for="heartDisease" class="text-sm text-gray-600 dark:text-gray-400">Heart Disease</label>
+            </div>
+            <div class="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    id="diabetes"
+                    bind:checked={hasDiabetes}
+                    class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
+                />
+                <label for="diabetes" class="text-sm text-gray-600 dark:text-gray-400">Diabetic</label>
+            </div>
+            <div class="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    id="kidneyDisease"
+                    bind:checked={hasKidneyDisease}
+                    class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
+                />
+                <label for="kidneyDisease" class="text-sm text-gray-600 dark:text-gray-400">Kidney Disease</label>
+            </div>
         </div>
 
         <button

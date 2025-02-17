@@ -19,8 +19,6 @@ export function endpointCustom(input: z.input<typeof endpointCustomParametersSch
 		const lastMessage = messages[messages.length - 1];
 		const question = lastMessage.content;
 
-		console.log("apiKey", apiKey);
-
 		// Prepare the request body for Flowise
 		const r = await fetch(url, {
 			method: "POST",
