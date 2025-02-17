@@ -26,6 +26,7 @@
 	import OverloadedModal from "$lib/components/OverloadedModal.svelte";
 	import { isHuggingChat } from "$lib/utils/isHuggingChat";
 	import StatsForm from "$lib/components/StatsForm.svelte";
+	import { pendingMessage } from "$lib/stores/pendingMessage";
 
 	let { data = $bindable(), children } = $props();
 
@@ -174,6 +175,11 @@
 			envPublic.PUBLIC_APP_DISCLAIMER === "1" &&
 			!($page.data.shared === true)
 	);
+
+	async function handleStatsSubmit() {
+		// The form submission is now handled directly in the StatsForm component
+		// through the pendingMessage store and navigation
+	}
 </script>
 
 <svelte:head>
@@ -288,11 +294,6 @@
 	{@render children?.()}
 
 	<nav class="grid max-h-screen grid-cols-1 overflow-hidden max-md:hidden">
-		<StatsForm
-			on:submit={(event) => {
-				console.log('Stats submitted:', event.detail);
-				// Handle the form submission here
-			}}
-		/>
+		<StatsForm />
 	</nav>
 </div>
