@@ -24,7 +24,7 @@ const reasoningSchema = z.union([
 	}),
 	z.object({
 		type: z.literal("tokens"), // use beginning and end tokens that define the reasoning portion of the answer
-		beginToken: z.string(), // empty string means the model starts in reasoning mode
+		beginToken: z.string(),
 		endToken: z.string(),
 	}),
 	z.object({
@@ -329,6 +329,8 @@ const addEndpoint = (m: Awaited<ReturnType<typeof processModel>>) => ({
 						return await endpoints.cohere(args);
 					case "langserve":
 						return await endpoints.langserve(args);
+					case "custom":
+						return endpoints.custom(args);
 					default:
 						// for legacy reason
 						return endpoints.tgi(args);
