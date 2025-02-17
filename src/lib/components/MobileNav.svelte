@@ -70,14 +70,29 @@
 		? 'block'
 		: 'hidden'}"
 >
-	<div class="flex h-12 items-center px-4">
+	<div class="flex h-12 items-center justify-between border-b px-3 dark:border-gray-800">
 		<button
 			type="button"
-			class="-mr-3 ml-auto flex size-12 items-center justify-center text-lg"
+			class="flex h-12 w-12 items-center justify-center"
 			onclick={() => dispatch("toggle", false)}
+			bind:this={closeEl}
 			aria-label="Close menu"
-			bind:this={closeEl}><CarbonClose /></button
 		>
+			<CarbonClose />
+		</button>
+		<span class="text-lg font-semibold">Menu</span>
 	</div>
 	{@render children?.()}
 </nav>
+
+<!-- Add mobile stats form button -->
+<button
+	type="button"
+	class="fixed bottom-4 right-4 z-20 rounded-full bg-blue-500 p-4 text-white shadow-lg md:hidden"
+	onclick={() => {
+		// Handle opening stats form on mobile
+	}}
+>
+	<span class="sr-only">Open Stats</span>
+	<!-- Add an icon here -->
+</button>

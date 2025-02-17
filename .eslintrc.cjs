@@ -11,7 +11,7 @@ module.exports = {
 	ignorePatterns: ["*.cjs"],
 	overrides: [
 		{
-			files: ["*.svelte"],
+			files: ["*.svelte"],								
 			parser: "svelte-eslint-parser",
 			parserOptions: {
 				parser: "@typescript-eslint/parser",

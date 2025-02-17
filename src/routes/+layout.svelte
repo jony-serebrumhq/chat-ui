@@ -25,6 +25,8 @@
 	import LoginModal from "$lib/components/LoginModal.svelte";
 	import OverloadedModal from "$lib/components/OverloadedModal.svelte";
 	import { isHuggingChat } from "$lib/utils/isHuggingChat";
+	import StatsForm from "$lib/components/StatsForm.svelte";
+	import { pendingMessage } from "$lib/stores/pendingMessage";
 
 	let { data = $bindable(), children } = $props();
 
@@ -173,6 +175,11 @@
 			envPublic.PUBLIC_APP_DISCLAIMER === "1" &&
 			!($page.data.shared === true)
 	);
+
+	async function handleStatsSubmit() {
+		// The form submission is now handled directly in the StatsForm component
+		// through the pendingMessage store and navigation
+	}
 </script>
 
 <svelte:head>
@@ -248,8 +255,8 @@
 
 <div
 	class="fixed grid h-full w-screen grid-cols-1 grid-rows-[auto,1fr] overflow-hidden text-smd {!isNavCollapsed
-		? 'md:grid-cols-[290px,1fr]'
-		: 'md:grid-cols-[0px,1fr]'} transition-[300ms] [transition-property:grid-template-columns] dark:text-gray-300 md:grid-rows-[1fr]"
+		? 'md:grid-cols-[290px,1fr,290px]'
+		: 'md:grid-cols-[0px,1fr,290px]'} transition-[300ms] [transition-property:grid-template-columns] dark:text-gray-300 md:grid-rows-[1fr]"
 >
 	<ExpandNavigation
 		isCollapsed={isNavCollapsed}
@@ -285,4 +292,8 @@
 		<Toast message={currentError} />
 	{/if}
 	{@render children?.()}
+
+	<nav class="grid max-h-screen grid-cols-1 overflow-hidden max-md:hidden">
+		<StatsForm />
+	</nav>
 </div>
