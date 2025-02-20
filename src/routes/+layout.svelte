@@ -204,19 +204,19 @@
 	<link
 		rel="icon"
 		href="{envPublic.PUBLIC_ORIGIN ||
-			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/favicon.ico"
+			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/converted_icon.ico"
 		sizes="32x32"
 	/>
 	<link
 		rel="icon"
 		href="{envPublic.PUBLIC_ORIGIN ||
-			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/icon.svg"
+			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/converted_icon.ico"
 		type="image/svg+xml"
 	/>
 	<link
 		rel="apple-touch-icon"
 		href="{envPublic.PUBLIC_ORIGIN ||
-			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/apple-touch-icon.png"
+			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/converted_icon.ico"
 	/>
 	<link
 		rel="manifest"
