@@ -30,6 +30,7 @@
 	import OpenReasoningResults from "./OpenReasoningResults.svelte";
 	import Alternatives from "./Alternatives.svelte";
 	import Vote from "./Vote.svelte";
+	import YouTubeEmbed from './YouTubeEmbed.svelte';
 
 	interface Props {
 		message: Message;
@@ -126,6 +127,22 @@
 			}
 		}
 	});
+
+	// Function to extract YouTube video ID from URL
+	function getYouTubeVideoId(url: string): string | null {
+		const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+		const match = url.match(regex);
+		return match ? match[1] : null;
+	}
+
+	// Function to find YouTube links in text
+	function findYouTubeLinks(content: string): Array<{url: string, videoId: string}> {
+		const regex = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/g;
+		const matches = content.match(regex) || [];
+		return matches
+			.map(url => ({url, videoId: getYouTubeVideoId(url)}))
+			.filter(({videoId}) => videoId !== null);
+	}
 </script>
 
 {#if message.from === "assistant"}
@@ -197,6 +214,14 @@
 					class="prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900"
 				>
 					<MarkdownRenderer content={message.content} sources={webSearchSources} />
+					
+					{#if message.content}
+						{#each findYouTubeLinks(message.content) as {videoId}}
+							<div class="mt-4">
+								<YouTubeEmbed {videoId} />
+							</div>
+						{/each}
+					{/if}
 				</div>
 			</div>
 
