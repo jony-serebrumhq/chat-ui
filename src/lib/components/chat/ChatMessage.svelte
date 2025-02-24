@@ -31,6 +31,7 @@
 	import Alternatives from "./Alternatives.svelte";
 	import Vote from "./Vote.svelte";
 	import YouTubeEmbed from './YouTubeEmbed.svelte';
+	import JsonTable from './JsonTable.svelte';
 
 	interface Props {
 		message: Message;
@@ -139,10 +140,110 @@
 	function findYouTubeLinks(content: string): Array<{url: string, videoId: string}> {
 		const regex = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/g;
 		const matches = content.match(regex) || [];
+		const seenVideoIds = new Set<string>();
 		return matches
 			.map(url => ({url, videoId: getYouTubeVideoId(url)}))
-			.filter(({videoId}) => videoId !== null);
+			.filter(({videoId}) => videoId !== null)
+			.filter(({videoId}) => {
+				if (seenVideoIds.has(videoId as string)) {
+					return false;
+				}
+				seenVideoIds.add(videoId as string);
+				return true;
+			});
 	}
+
+	// Function to find JSON content in text
+	function findJsonContent(content: string): Array<{data: Record<string, any>, start: number, end: number}> {
+		const results: Array<{data: Record<string, any>, start: number, end: number}> = [];
+		
+		// Try to find JSON in code blocks
+		const codeBlockRegex = /```(?:json)?\n([\s\S]*?)```/g;
+		let match;
+		
+		while ((match = codeBlockRegex.exec(content)) !== null) {
+			try {
+				const jsonData = JSON.parse(match[1]);
+				results.push({
+					data: jsonData,
+					start: match.index,
+					end: match.index + match[0].length
+				});
+			} catch (e) {
+				// Not valid JSON, skip
+			}
+		}
+		
+		// If no JSON found in code blocks, try to find standalone JSON
+		if (results.length === 0) {
+			const jsonRegex = /\{[\s\S]*?\}|\[[\s\S]*?\]/g;
+			while ((match = jsonRegex.exec(content)) !== null) {
+				try {
+					const jsonData = JSON.parse(match[0]);
+					results.push({
+						data: jsonData,
+						start: match.index,
+						end: match.index + match[0].length
+					});
+				} catch (e) {
+					// Not valid JSON, skip
+				}
+			}
+		}
+		
+		return results;
+	}
+
+	// Function to remove JSON content from text
+	function removeJsonContent(content: string, jsonLocations: Array<{start: number, end: number}>): string {
+		// Sort locations in reverse order to remove from end to start
+		const sortedLocations = [...jsonLocations].sort((a, b) => b.start - a.start);
+		
+		let result = content;
+		for (const {start, end} of sortedLocations) {
+			result = result.slice(0, start) + result.slice(end);
+		}
+		return result;
+	}
+
+	interface ProcessedContent {
+		content: string;
+		jsonData: Array<{
+			data: Record<string, any>;
+			position: number;  // Position where the table should be inserted
+		}>;
+	}
+
+	let processedContent: ProcessedContent = $state({ content: "", jsonData: [] });
+
+	$effect(() => {
+		if (!message.content) {
+			processedContent = { content: "", jsonData: [] };
+			return;
+		}
+		const jsonResults = findJsonContent(message.content);
+		
+		// Sort locations in reverse order to process from end to start
+		const sortedResults = [...jsonResults].sort((a, b) => b.start - a.start);
+		
+		let newContent = message.content;
+		const jsonWithPositions = [];
+		
+		// Replace each JSON with a special marker and collect the data
+		for (const {data, start, end} of sortedResults) {
+			const marker = `__JSON_TABLE_${jsonWithPositions.length}__`;
+			newContent = newContent.slice(0, start) + marker + newContent.slice(end);
+			jsonWithPositions.push({
+				data,
+				position: start
+			});
+		}
+		
+		processedContent = {
+			content: newContent,
+			jsonData: jsonWithPositions
+		};
+	});
 </script>
 
 {#if message.from === "assistant"}
@@ -213,9 +314,20 @@
 				<div
 					class="prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900"
 				>
-					<MarkdownRenderer content={message.content} sources={webSearchSources} />
-					
 					{#if message.content}
+						{#each processedContent.content.split(/(__JSON_TABLE_\d+__)/) as part, i}
+							{#if part.startsWith('__JSON_TABLE_')}
+								{@const index = parseInt(part.match(/\d+/)?.[0] ?? '-1')}
+								{#if index >= 0 && index < processedContent.jsonData.length}
+									<div class="my-4">
+										<JsonTable data={processedContent.jsonData[index].data} />
+									</div>
+								{/if}
+							{:else}
+								<MarkdownRenderer content={part} sources={webSearchSources} />
+							{/if}
+						{/each}
+						
 						{#each findYouTubeLinks(message.content) as {videoId}}
 							<div class="mt-4">
 								<YouTubeEmbed {videoId} />

@@ -179,7 +179,7 @@
 		<div
 			class="scrollbar-custom -ml-0.5 flex max-w-[calc(100%-40px)] flex-wrap items-center justify-start gap-2.5 px-3 pb-2.5 pt-1.5 text-gray-500 dark:text-gray-400 max-md:flex-nowrap max-md:overflow-x-auto sm:gap-2"
 		>
-			<HoverTooltip
+			<!-- <HoverTooltip
 				label="Search the web"
 				position="top"
 				TooltipClassNames="text-xs !text-left !w-auto whitespace-nowrap !py-1 !mb-0 max-sm:hidden {webSearchIsOn
@@ -214,7 +214,7 @@
 						Search
 					{/if}
 				</button>
-			</HoverTooltip>
+			</HoverTooltip> -->
 			{#if modelHasTools}
 				<HoverTooltip
 					label="Generate	images"
