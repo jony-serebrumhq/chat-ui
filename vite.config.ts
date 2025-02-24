@@ -37,4 +37,9 @@ export default defineConfig({
 		globals: true,
 		testTimeout: 10000,
 	},
+	preview: {
+		host: "0.0.0.0",
+		port: Number(process.env.PORT) || 3000,
+		allowedHosts: ["*"], // Add your Render-provided domain here
+	},
 });
