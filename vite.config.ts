@@ -40,6 +40,6 @@ export default defineConfig({
 	preview: {
 		host: "0.0.0.0",
 		port: Number(process.env.PORT) || 3000,
-		allowedHosts: ["*"], // Add your Render-provided domain here
+		allowedHosts: ["chat-ui-nb8z.onrender.com"], // Add your Render-provided domain here
 	},
 });
