@@ -52,30 +52,46 @@ export function endpointCustom(input: z.input<typeof endpointCustomParametersSch
 			throw new Error("No response text received from the API");
 		}
 
-		// const responseText="hello";
-
 		return (async function* () {
-			// Yield the entire response as a single token
-			yield {
-				token: {
-					id: 1,
-					text: responseText,
-					logprob: 0,
-					special: false,
-				},
-				generated_text: null,
-				details: null,
-			} satisfies TextGenerationStreamOutput;
+			// Simulate streaming by breaking the response into chunks
+			// This will make the UI display the text as if it's being streamed
+			const chunkSize = 1; // Adjust this value to control streaming speed
+			let tokenId = 0;
+			let generatedText = "";
+
+			// Split the text into words to make the streaming more natural
+			const words = responseText.split(/(\s+)/);
+
+			for (let i = 0; i < words.length; i += chunkSize) {
+				// Get a chunk of words
+				const chunk = words.slice(i, i + chunkSize).join("");
+				generatedText += chunk;
+
+				// Yield each chunk as a separate token
+				yield {
+					token: {
+						id: tokenId++,
+						text: chunk,
+						logprob: 0,
+						special: false,
+					},
+					generated_text: null,
+					details: null,
+				} satisfies TextGenerationStreamOutput;
+
+				// Add a small delay to simulate real-time streaming
+				await new Promise((resolve) => setTimeout(resolve, 10));
+			}
 
 			// Yield the final token with the complete text
 			yield {
 				token: {
-					id: 2,
+					id: tokenId,
 					text: "",
 					logprob: 0,
 					special: true,
 				},
-				generated_text: responseText,
+				generated_text: generatedText,
 				details: null,
 			} satisfies TextGenerationStreamOutput;
 		})();
