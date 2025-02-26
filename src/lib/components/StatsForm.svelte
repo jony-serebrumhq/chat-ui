@@ -27,7 +27,6 @@
     let hasHeartDisease = $state(false);
     let hasDiabetes = $state(false);
     let hasKidneyDisease = $state(false);
-    let isFormVisible = $state(true);
 
     const healthGoals = [
         'Weight loss',
@@ -60,10 +59,6 @@
         openSections[section] = !openSections[section];
     }
 
-    function toggleFormVisibility() {
-        isFormVisible = !isFormVisible;
-    }
-
     function generatePrompt() {
         return `Generate a 7-day meal plan for me with the following details:
 Age: ${age}
@@ -93,15 +88,6 @@ Diet Preference: ${dietPreference}`;
         transition: transform 0.2s ease-in-out;
     }
 
-    .form-container {
-        transition: width 0.3s ease-in-out;
-        height: 100vh;
-    }
-
-    .toggle-button {
-        transition: transform 0.3s ease-in-out;
-    }
-
     /* Add custom scrollbar styling */
     .custom-scrollbar {
         scrollbar-width: thin;
@@ -126,20 +112,8 @@ Diet Preference: ${dietPreference}`;
     }
 </style>
 
-<div class="relative flex h-screen">
-    <button
-        type="button"
-        class="toggle-button absolute -left-6 top-4 z-10 flex h-6 w-6 items-center justify-center rounded-l-md bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
-        on:click={toggleFormVisibility}
-        title={isFormVisible ? "Hide form" : "Show form"}
-    >
-        <CarbonChevronRight class="transform {isFormVisible ? 'rotate-180' : ''}" />
-    </button>
-
-    <div 
-        class="form-container flex flex-col border-l dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
-        style="width: {isFormVisible ? '320px' : '0px'}"
-    >
+<div class="flex h-screen">
+    <div class="flex flex-col border-l dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden w-full">
         <div class="flex-none p-4">
             <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Health Info</h2>
         </div>

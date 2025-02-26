@@ -37,6 +37,7 @@
 
 	let isNavOpen = $state(false);
 	let isNavCollapsed = $state(false);
+	let isStatsCollapsed = $state(false);
 
 	let overloadedModalOpen = $state(false);
 
@@ -255,8 +256,12 @@
 
 <div
 	class="fixed grid h-full w-screen grid-cols-1 grid-rows-[auto,1fr] overflow-hidden text-smd {!isNavCollapsed
-		? 'md:grid-cols-[290px,1fr,290px]'
-		: 'md:grid-cols-[0px,1fr,290px]'} transition-[300ms] [transition-property:grid-template-columns] dark:text-gray-300 md:grid-rows-[1fr]"
+		? !isStatsCollapsed 
+			? 'md:grid-cols-[290px,1fr,290px]'
+			: 'md:grid-cols-[290px,1fr,0px]'
+		: !isStatsCollapsed
+			? 'md:grid-cols-[0px,1fr,290px]'
+			: 'md:grid-cols-[0px,1fr,0px]'} transition-[300ms] [transition-property:grid-template-columns] dark:text-gray-300 md:grid-rows-[1fr]"
 >
 	<ExpandNavigation
 		isCollapsed={isNavCollapsed}
@@ -264,6 +269,14 @@
 		classNames="absolute inset-y-0 z-10 my-auto {!isNavCollapsed
 			? 'left-[290px]'
 			: 'left-0'} *:transition-transform"
+	/>
+
+	<ExpandNavigation
+		isCollapsed={isStatsCollapsed}
+		onClick={() => (isStatsCollapsed = !isStatsCollapsed)}
+		classNames="absolute inset-y-0 z-10 my-auto {!isStatsCollapsed
+			? 'right-[290px]'
+			: 'right-0'} rotate-180 *:transition-transform"
 	/>
 
 	<MobileNav isOpen={isNavOpen} on:toggle={(ev) => (isNavOpen = ev.detail)} title={mobileNavTitle}>
