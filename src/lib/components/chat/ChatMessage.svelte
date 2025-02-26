@@ -137,20 +137,34 @@
 	}
 
 	// Function to find YouTube links in text
-	function findYouTubeLinks(content: string): Array<{url: string, videoId: string}> {
+	function findYouTubeLinks(content: string): Array<{url: string, videoId: string, start: number, end: number}> {
 		const regex = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/g;
-		const matches = content.match(regex) || [];
+		const matches = [];
+		let match;
+		
+		// Find all YouTube links with their positions
+		while ((match = regex.exec(content)) !== null) {
+			const url = match[0];
+			const videoId = getYouTubeVideoId(url);
+			if (videoId) {
+				matches.push({
+					url,
+					videoId,
+					start: match.index,
+					end: match.index + url.length
+				});
+			}
+		}
+		
+		// Filter out duplicate video IDs
 		const seenVideoIds = new Set<string>();
-		return matches
-			.map(url => ({url, videoId: getYouTubeVideoId(url)}))
-			.filter(({videoId}) => videoId !== null)
-			.filter(({videoId}) => {
-				if (seenVideoIds.has(videoId as string)) {
-					return false;
-				}
-				seenVideoIds.add(videoId as string);
-				return true;
-			});
+		return matches.filter(({videoId}) => {
+			if (seenVideoIds.has(videoId)) {
+				return false;
+			}
+			seenVideoIds.add(videoId);
+			return true;
+		});
 	}
 
 	// Function to find JSON content in text
@@ -212,36 +226,65 @@
 			data: Record<string, any>;
 			position: number;  // Position where the table should be inserted
 		}>;
+		youtubeEmbeds: Array<{
+			videoId: string;
+			position: number;  // Position where the embed should be inserted
+		}>;
 	}
 
-	let processedContent: ProcessedContent = $state({ content: "", jsonData: [] });
+	let processedContent: ProcessedContent = $state({ 
+		content: "", 
+		jsonData: [],
+		youtubeEmbeds: []
+	});
 
 	$effect(() => {
 		if (!message.content) {
-			processedContent = { content: "", jsonData: [] };
+			processedContent = { content: "", jsonData: [], youtubeEmbeds: [] };
 			return;
 		}
-		const jsonResults = findJsonContent(message.content);
 		
-		// Sort locations in reverse order to process from end to start
-		const sortedResults = [...jsonResults].sort((a, b) => b.start - a.start);
+		// First process JSON content
+		const jsonResults = findJsonContent(message.content);
+		const youtubeLinks = findYouTubeLinks(message.content);
+		
+		// Sort all replacements in reverse order to process from end to start
+		// This prevents position shifts when making replacements
+		const allReplacements = [
+			...jsonResults.map(item => ({ type: 'json', ...item })),
+			...youtubeLinks.map(item => ({ type: 'youtube', ...item }))
+		].sort((a, b) => b.start - a.start);
 		
 		let newContent = message.content;
 		const jsonWithPositions = [];
+		const youtubeWithPositions = [];
 		
-		// Replace each JSON with a special marker and collect the data
-		for (const {data, start, end} of sortedResults) {
-			const marker = `__JSON_TABLE_${jsonWithPositions.length}__`;
-			newContent = newContent.slice(0, start) + marker + newContent.slice(end);
-			jsonWithPositions.push({
-				data,
-				position: start
-			});
+		// Replace each item with a special marker and collect the data
+		for (let i = 0; i < allReplacements.length; i++) {
+			const item = allReplacements[i];
+			const { type, start, end } = item;
+			
+			if (type === 'json') {
+				const marker = `__JSON_TABLE_${jsonWithPositions.length}__`;
+				newContent = newContent.slice(0, start) + marker + newContent.slice(end);
+				jsonWithPositions.push({
+					data: item.data,
+					position: start
+				});
+			} else if (type === 'youtube') {
+				const marker = `__YOUTUBE_EMBED_${youtubeWithPositions.length}__`;
+				newContent = newContent.slice(0, start) + marker + newContent.slice(end);
+				youtubeWithPositions.push({
+					videoId: item.videoId,
+					position: start
+				});
+			}
 		}
 		
 		processedContent = {
 			content: newContent,
-			jsonData: jsonWithPositions
+			jsonData: jsonWithPositions,
+			youtubeEmbeds: youtubeWithPositions
 		};
 	});
 </script>
@@ -315,7 +358,7 @@
 					class="prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900"
 				>
 					{#if message.content}
-						{#each processedContent.content.split(/(__JSON_TABLE_\d+__)/) as part, i}
+						{#each processedContent.content.split(/(__JSON_TABLE_\d+__|__YOUTUBE_EMBED_\d+__)/) as part, i}
 							{#if part.startsWith('__JSON_TABLE_')}
 								{@const index = parseInt(part.match(/\d+/)?.[0] ?? '-1')}
 								{#if index >= 0 && index < processedContent.jsonData.length}
@@ -323,15 +366,16 @@
 										<JsonTable data={processedContent.jsonData[index].data} />
 									</div>
 								{/if}
+							{:else if part.startsWith('__YOUTUBE_EMBED_')}
+								{@const index = parseInt(part.match(/\d+/)?.[0] ?? '-1')}
+								{#if index >= 0 && index < processedContent.youtubeEmbeds.length}
+									<div class="my-4">
+										<YouTubeEmbed videoId={processedContent.youtubeEmbeds[index].videoId} />
+									</div>
+								{/if}
 							{:else}
 								<MarkdownRenderer content={part} sources={webSearchSources} />
 							{/if}
-						{/each}
-						
-						{#each findYouTubeLinks(message.content) as {videoId}}
-							<div class="mt-4">
-								<YouTubeEmbed {videoId} />
-							</div>
 						{/each}
 					{/if}
 				</div>
