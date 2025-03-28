@@ -26,6 +26,7 @@
 	import OverloadedModal from "$lib/components/OverloadedModal.svelte";
 	import { isHuggingChat } from "$lib/utils/isHuggingChat";
 	import StatsForm from "$lib/components/StatsForm.svelte";
+	import FormSelector from "$lib/components/FormSelector.svelte";
 	import { pendingMessage } from "$lib/stores/pendingMessage";
 
 	let { data = $bindable(), children } = $props();
@@ -307,7 +308,7 @@
 	{@render children?.()}
 
 	<nav class="grid max-h-screen grid-cols-1 overflow-hidden max-md:hidden">
-		<StatsForm 
+		<FormSelector 
 			on:message={(ev) => {
 				if (data.loginRequired) {
 					ev.preventDefault();

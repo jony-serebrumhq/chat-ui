@@ -1,19 +1,9 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import { goto } from "$app/navigation";
-    import { base } from "$app/paths";
-    import { page } from "$app/stores";
-    import { pendingMessage } from "$lib/stores/pendingMessage";
-    import { error } from "$lib/stores/errors";
-    import { ERROR_MESSAGES } from "$lib/stores/errors";
     import { useSettingsStore } from "$lib/stores/settings";
-    import { v4 as uuidv4 } from 'uuid';
-    import { chatInputContent } from "$lib/stores/chatInput";
-    import { loginModalOpen } from "$lib/stores/loginModal";
-    import CarbonChevronRight from "~icons/carbon/chevron-right";
-
-    const settings = useSettingsStore();
     
+    const settings = useSettingsStore();
+
     const dispatch = createEventDispatcher<{
         message: string;
     }>();
