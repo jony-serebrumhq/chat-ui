@@ -331,6 +331,8 @@ const addEndpoint = (m: Awaited<ReturnType<typeof processModel>>) => ({
 						return await endpoints.langserve(args);
 					case "custom":
 						return endpoints.custom(args);
+					case "supplementFlow":
+						return endpoints.supplementFlow(args);
 					default:
 						// for legacy reason
 						return endpoints.tgi(args);

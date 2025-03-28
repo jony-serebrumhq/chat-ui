@@ -31,6 +31,10 @@ import { endpointCustom, endpointCustomParametersSchema } from "./custom/endpoin
 
 import type { Tool, ToolCall, ToolResult } from "$lib/types/Tool";
 import type { ObjectId } from "mongodb";
+import {
+	endpointSupplementFlow,
+	endpointSupplementFlowParametersSchema,
+} from "./custom/supplementFlowCustom";
 
 export type EndpointMessage = Omit<Message, "id">;
 
@@ -77,6 +81,7 @@ export const endpoints = {
 	cohere: endpointCohere,
 	langserve: endpointLangserve,
 	custom: endpointCustom,
+	supplementFlow: endpointSupplementFlow,
 };
 
 export const endpointSchema = z.discriminatedUnion("type", [
@@ -94,5 +99,6 @@ export const endpointSchema = z.discriminatedUnion("type", [
 	endpointCohereParametersSchema,
 	endpointLangserveParametersSchema,
 	endpointCustomParametersSchema,
+	endpointSupplementFlowParametersSchema,
 ]);
 export default endpoints;

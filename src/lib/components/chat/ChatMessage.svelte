@@ -32,6 +32,9 @@
 	import Vote from "./Vote.svelte";
 	import YouTubeEmbed from './YouTubeEmbed.svelte';
 	import JsonTable from './JsonTable.svelte';
+	import ProductCards from './ProductCards.svelte';
+	import YouTubeCards from './YouTubeCards.svelte';
+	import NutraceuticalCards from './NutraceuticalCards.svelte';
 
 	interface Props {
 		message: Message;
@@ -168,8 +171,8 @@
 	}
 
 	// Function to find JSON content in text
-	function findJsonContent(content: string): Array<{data: Record<string, any>, start: number, end: number}> {
-		const results: Array<{data: Record<string, any>, start: number, end: number}> = [];
+	function findJsonContent(content: string): Array<{data: Record<string, any>, start: number, end: number, isProductRecommendation: boolean, isEducationalVideos: boolean, isNutraceuticalRecommendation: boolean}> {
+		const results: Array<{data: Record<string, any>, start: number, end: number, isProductRecommendation: boolean, isEducationalVideos: boolean, isNutraceuticalRecommendation: boolean}> = [];
 		
 		// Try to find JSON in code blocks
 		const codeBlockRegex = /```(?:json)?\n([\s\S]*?)```/g;
@@ -178,10 +181,31 @@
 		while ((match = codeBlockRegex.exec(content)) !== null) {
 			try {
 				const jsonData = JSON.parse(match[1]);
+				const isProductRecommendation = 
+					typeof jsonData === 'object' && 
+					jsonData !== null && 
+					'product_recommendations' in jsonData && 
+					Array.isArray(jsonData.product_recommendations);
+					
+				const isEducationalVideos = 
+					typeof jsonData === 'object' && 
+					jsonData !== null && 
+					'educational_videos' in jsonData && 
+					Array.isArray(jsonData.educational_videos);
+				
+				const isNutraceuticalRecommendation = 
+					typeof jsonData === 'object' && 
+					jsonData !== null && 
+					'nutraceutical_recommendations' in jsonData && 
+					Array.isArray(jsonData.nutraceutical_recommendations);
+					
 				results.push({
 					data: jsonData,
 					start: match.index,
-					end: match.index + match[0].length
+					end: match.index + match[0].length,
+					isProductRecommendation,
+					isEducationalVideos,
+					isNutraceuticalRecommendation
 				});
 			} catch (e) {
 				// Not valid JSON, skip
@@ -194,10 +218,31 @@
 			while ((match = jsonRegex.exec(content)) !== null) {
 				try {
 					const jsonData = JSON.parse(match[0]);
+					const isProductRecommendation = 
+						typeof jsonData === 'object' && 
+						jsonData !== null && 
+						'product_recommendations' in jsonData && 
+						Array.isArray(jsonData.product_recommendations);
+						
+					const isEducationalVideos = 
+						typeof jsonData === 'object' && 
+						jsonData !== null && 
+						'educational_videos' in jsonData && 
+						Array.isArray(jsonData.educational_videos);
+					
+					const isNutraceuticalRecommendation = 
+						typeof jsonData === 'object' && 
+						jsonData !== null && 
+						'nutraceutical_recommendations' in jsonData && 
+						Array.isArray(jsonData.nutraceutical_recommendations);
+						
 					results.push({
 						data: jsonData,
 						start: match.index,
-						end: match.index + match[0].length
+						end: match.index + match[0].length,
+						isProductRecommendation,
+						isEducationalVideos,
+						isNutraceuticalRecommendation
 					});
 				} catch (e) {
 					// Not valid JSON, skip
@@ -225,6 +270,9 @@
 		jsonData: Array<{
 			data: Record<string, any>;
 			position: number;  // Position where the table should be inserted
+			isProductRecommendation: boolean;
+			isEducationalVideos: boolean;
+			isNutraceuticalRecommendation: boolean;
 		}>;
 		youtubeEmbeds: Array<{
 			videoId: string;
@@ -250,9 +298,27 @@
 		
 		// Sort all replacements in reverse order to process from end to start
 		// This prevents position shifts when making replacements
+		type JsonReplacement = {
+			type: 'json';
+			data: Record<string, any>;
+			start: number;
+			end: number;
+			isProductRecommendation: boolean;
+			isEducationalVideos: boolean;
+			isNutraceuticalRecommendation: boolean;
+		};
+		
+		type YoutubeReplacement = {
+			type: 'youtube';
+			videoId: string;
+			url: string;
+			start: number;
+			end: number;
+		};
+		
 		const allReplacements = [
-			...jsonResults.map(item => ({ type: 'json', ...item })),
-			...youtubeLinks.map(item => ({ type: 'youtube', ...item }))
+			...jsonResults.map(item => ({ type: 'json', ...item } as JsonReplacement)),
+			...youtubeLinks.map(item => ({ type: 'youtube', ...item } as YoutubeReplacement))
 		].sort((a, b) => b.start - a.start);
 		
 		let newContent = message.content;
@@ -265,17 +331,22 @@
 			const { type, start, end } = item;
 			
 			if (type === 'json') {
+				const jsonItem = item as JsonReplacement;
 				const marker = `__JSON_TABLE_${jsonWithPositions.length}__`;
 				newContent = newContent.slice(0, start) + marker + newContent.slice(end);
 				jsonWithPositions.push({
-					data: item.data,
-					position: start
+					data: jsonItem.data,
+					position: start,
+					isProductRecommendation: jsonItem.isProductRecommendation,
+					isEducationalVideos: jsonItem.isEducationalVideos,
+					isNutraceuticalRecommendation: jsonItem.isNutraceuticalRecommendation
 				});
 			} else if (type === 'youtube') {
+				const youtubeItem = item as YoutubeReplacement;
 				const marker = `__YOUTUBE_EMBED_${youtubeWithPositions.length}__`;
 				newContent = newContent.slice(0, start) + marker + newContent.slice(end);
 				youtubeWithPositions.push({
-					videoId: item.videoId,
+					videoId: youtubeItem.videoId,
 					position: start
 				});
 			}
@@ -363,7 +434,15 @@
 								{@const index = parseInt(part.match(/\d+/)?.[0] ?? '-1')}
 								{#if index >= 0 && index < processedContent.jsonData.length}
 									<div class="my-4">
-										<JsonTable data={processedContent.jsonData[index].data} />
+										{#if processedContent.jsonData[index].isProductRecommendation}
+											<ProductCards products={processedContent.jsonData[index].data.product_recommendations} />
+										{:else if processedContent.jsonData[index].isEducationalVideos}
+											<YouTubeCards videos={processedContent.jsonData[index].data.educational_videos} />
+										{:else if processedContent.jsonData[index].isNutraceuticalRecommendation}
+											<NutraceuticalCards recommendations={processedContent.jsonData[index].data.nutraceutical_recommendations} />
+										{:else}
+											<JsonTable data={processedContent.jsonData[index].data} />
+										{/if}
 									</div>
 								{/if}
 							{:else if part.startsWith('__YOUTUBE_EMBED_')}
