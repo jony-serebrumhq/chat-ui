@@ -4,6 +4,7 @@
         reason_for_recommendation: string;
         benefits: string;
         interactions_with_users_medications: string;
+        best_time_to_take: string;
     }
 
     interface Props {
@@ -32,6 +33,10 @@
                     <div class="space-y-2">
                         <h4 class="font-medium text-sm text-orange-700 dark:text-orange-400">Potential interactions</h4>
                         <p class="text-gray-700 dark:text-gray-300 text-sm">{recommendation.interactions_with_users_medications}</p>
+                    </div>
+                    <div class="space-y-2">
+                        <h4 class="font-medium text-sm text-blue-700 dark:text-blue-400">Best time to take</h4>
+                        <p class="text-gray-700 dark:text-gray-300 text-sm">{recommendation.best_time_to_take}</p>
                     </div>
                 </div>
             </div>

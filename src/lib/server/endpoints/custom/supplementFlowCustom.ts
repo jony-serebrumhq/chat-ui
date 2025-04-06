@@ -8,7 +8,7 @@ export const endpointSupplementFlowParametersSchema = z.object({
 	openaiApiKey: z.string(),
 	weight: z.number().int().positive().default(1),
 	model: z.any(),
-	vectorStoreId: z.string().default("vs_67d80ddff1b88191a544238c4f2e6d75"),
+	vectorStoreId: z.string(),
 });
 
 // Define types for our data structures
@@ -17,6 +17,8 @@ interface NutraceuticalRecommendation {
 	reason_for_recommendation: string;
 	benefits: string;
 	interactions_with_users_medications: string;
+	best_time_to_take: string;
+	user_gender: string;
 }
 
 interface EducationalVideo {
@@ -29,6 +31,7 @@ interface ProductRecommendation {
 	image: string;
 	description: string;
 	price: string;
+	product_link: string;
 }
 
 export function endpointSupplementFlow(
@@ -54,7 +57,7 @@ export function endpointSupplementFlow(
 						content: [
 							{
 								type: "input_text",
-								text: "You are a Nutraceutical Consultant. Provide supplement, mineral, and vitamin recommendations based on user health details. Consider any mentioned medications and possible interactions. Respond strictly in JSON format.",
+								text: "You are a knowledgeable supplement advisor. Based solely on the user’s profile — and only recommending supplements appropriate for their gender — suggest the **five best** supplements, ranked most → least important. Respond strictly in JSON format.",
 							},
 						],
 					},
@@ -86,12 +89,16 @@ export function endpointSupplementFlow(
 											reason_for_recommendation: { type: "string" },
 											benefits: { type: "string" },
 											interactions_with_users_medications: { type: "string" },
+											best_time_to_take: { type: "string" },
+											user_gender: { type: "string" },
 										},
 										required: [
 											"nutraceutical_name",
 											"reason_for_recommendation",
 											"benefits",
 											"interactions_with_users_medications",
+											"best_time_to_take",
+											"user_gender",
 										],
 									},
 								},
@@ -165,7 +172,10 @@ export function endpointSupplementFlow(
 	}
 
 	// Product Consultant Agent
-	async function productConsultant(supplement: string): Promise<ProductRecommendation[]> {
+	async function productConsultant(
+		supplement: string,
+		gender: string
+	): Promise<ProductRecommendation[]> {
 		try {
 			const response = await openai.responses.create({
 				model: "gpt-4o",
@@ -181,7 +191,7 @@ export function endpointSupplementFlow(
 						content: [
 							{
 								type: "input_text",
-								text: `You are a Product Consultant with access to a product catalog. Recommend a product that matches the nutraceutical supplement ${supplement}. Include product name, image URL, description, and price. Respond strictly in JSON format.`,
+								text: `You are a Product Consultant with access to a product catalog. Recommend a product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Include product name, image URL, description, and price. Respond strictly in JSON format.`,
 							},
 						],
 					},
@@ -204,8 +214,9 @@ export function endpointSupplementFlow(
 											image: { type: "string" },
 											description: { type: "string" },
 											price: { type: "string" },
+											product_link: { type: "string" },
 										},
-										required: ["product_name", "image", "description", "price"],
+										required: ["product_name", "image", "description", "price", "product_link"],
 									},
 								},
 							},
@@ -225,13 +236,21 @@ export function endpointSupplementFlow(
 	}
 
 	return async ({ messages }) => {
+		// Get the last 20 messages (or all messages if less than 20)
+		const contextMessages = messages.slice(Math.max(0, messages.length - 20));
+
+		// Format the conversation history
+		const conversationHistory = contextMessages
+			.map((msg) => `${msg.from === "user" ? "User" : "Assistant"}: ${msg.content}`)
+			.join("\n\n");
+
 		// Get the last message content as the user's health information
-		const lastMessage = messages[messages.length - 1];
-		const userHealthInfo = lastMessage.content;
+		// const lastMessage = messages[messages.length - 1];
+		// const userHealthInfo = lastMessage.content;
 
 		try {
 			// Step 1: Get supplement recommendations
-			const supplementRecommendations = await nutraceuticalConsultant(userHealthInfo);
+			const supplementRecommendations = await nutraceuticalConsultant(conversationHistory);
 
 			if (supplementRecommendations.length === 0) {
 				const noRecommendationsMessage =
@@ -279,7 +298,10 @@ export function endpointSupplementFlow(
 					}
 
 					// Get products for this supplement
-					const products = await productConsultant(supplement.nutraceutical_name);
+					const products = await productConsultant(
+						supplement.nutraceutical_name,
+						supplement.user_gender
+					);
 					if (products && products.length > 0) {
 						productRecommendationsArray = productRecommendationsArray.concat(products);
 					}

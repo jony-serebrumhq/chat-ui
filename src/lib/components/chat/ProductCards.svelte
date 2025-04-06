@@ -5,6 +5,7 @@
             image: string;
             description: string;
             price: string;
+            product_link: string;
         }>;
     }
 
@@ -32,6 +33,7 @@
                     <h3 class="font-bold text-gray-900 dark:text-gray-100 text-sm mb-1 line-clamp-2">{product.product_name}</h3>
                     <p class="italic text-gray-700 dark:text-gray-300 text-sm mb-2">{product.price}</p>
                     <p class="text-gray-600 dark:text-gray-400 text-xs line-clamp-3">{product.description}</p>
+                    <a href={product.product_link} target="_blank" class="text-blue-500 dark:text-blue-400 text-xs mt-2">Buy Now</a>
                 </div>
             </div>
         {/each}

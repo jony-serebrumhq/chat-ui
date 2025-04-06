@@ -173,37 +173,28 @@
         const symptomsStr = symptoms.includes('None') ? 'None' : symptoms.join(', ');
         const exerciseTypesStr = exerciseTypes.includes('None') ? 'None' : exerciseTypes.join(', ');
 
-        return `Based on my health information, please recommend supplements that might be beneficial:
+        return `Based on my profile below, please recommend supplements that might be beneficial:
 
-HEALTH GOALS:
+#User Profile:
 Primary Health Goal: ${primaryHealthGoal}
 Secondary Health Goal: ${secondaryHealthGoal}
-
-GENERAL INFORMATION:
 Gender: ${gender}
 Age: ${age}
 Height: ${height}
 Weight: ${weight} lb
 Allergies/Intolerances: ${allergiesStr}
-
-MEDICAL AND HEALTH CONDITIONS:
 Existing Health Conditions: ${healthConditionsStr}
 Symptoms Experienced: ${symptomsStr}
 Current Medications: ${medications || 'None'}
-
-LIFESTYLE AND ACTIVITY:
 Exercise Frequency: ${exerciseFrequency}
 Exercise Types: ${exerciseTypesStr}
-
-PREFERENCES:
 Price Range: ${priceRange}
 Ingredient Preference: ${ingredientPreference}
 Plant-Based Preference: ${plantBasedPreference}
 
 ADDITIONAL INFORMATION:
 ${additionalInfo || 'None'}
-
-Please provide detailed information about each recommended supplement, including potential interactions with my medications and any relevant educational resources.`;
+`;
     }
 
     function handleSubmit(e: Event) {
