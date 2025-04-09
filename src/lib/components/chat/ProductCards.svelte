@@ -21,11 +21,11 @@
     <div class="scrollbar-custom flex overflow-x-auto pb-4 space-x-4 snap-x">
         {#each products as product}
             <div class="snap-start flex-shrink-0 w-64 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div class="h-48 overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <div class="flex items-center justify-center h-48 bg-gray-100 dark:bg-gray-800">
                     <img 
                         src={product.image} 
                         alt={product.product_name}
-                        class="w-full h-full object-cover"
+                        class="max-w-full max-h-48 object-contain p-2"
                         on:error={handleImageError}
                     />
                 </div>
