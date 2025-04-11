@@ -9,14 +9,14 @@
     }>();
 
     // Section 1 - Health Goals
-    let primaryHealthGoal = $state('Improved Energy');
+    let primaryHealthGoal = $state('Improved energy');
     let secondaryHealthGoal = $state('Better sleep');
 
     // Section 2 - General Information
     let gender = $state('Male');
     let age = $state(35);
     let height = $state("5'8\" (172.72 cm)");
-    let weight = $state('150-170');
+    let weight = $state(170);
     let allergiesIntolerances = $state(['None']);
 
     // Section 3 - Medical and Health Conditions
@@ -31,7 +31,7 @@
     // Section 5 - Preferences
     let priceRange = $state('20$-40$');
     let ingredientPreference = $state('Minimal');
-    let plantBasedPreference = $state('No Preference');
+    let plantBasedPreference = $state('No preference');
 
     // Section 6 - Additional Information
     let additionalInfo = $state('');
@@ -39,8 +39,8 @@
     // Dropdown Options
     const healthGoalOptions = [
         'Weight loss', 
-        'Muscle Gain', 
-        'Improved Energy', 
+        'Muscle gain', 
+        'Improved energy', 
         'Boosted immunity', 
         'Better sleep', 
         'Enhanced focus and mental clarity', 
@@ -64,17 +64,17 @@
         }
     }
 
-    const weightOptions = [
-        '50-70', 
-        '70-90', 
-        '90-110', 
-        '110-130', 
-        '130-150', 
-        '150-170', 
-        '170-190', 
-        '190-210', 
-        '210+'
-    ];
+    // const weightOptions = [
+    //     '50-70', 
+    //     '70-90', 
+    //     '90-110', 
+    //     '110-130', 
+    //     '130-150', 
+    //     '150-170', 
+    //     '170-190', 
+    //     '190-210', 
+    //     '210+'
+    // ];
 
     const allergyOptions = [
         'Dairy', 
@@ -115,7 +115,7 @@
         'Cardio', 
         'Yoga/Pilates', 
         'Weightlifting', 
-        'Team Sports', 
+        'Team sports', 
         'None'
     ];
 
@@ -126,16 +126,16 @@
         'No limit'
     ];
 
-    const ingredientPreferenceOptions = [
-        'Minimal', 
-        'Extensive'
-    ];
+    // const ingredientPreferenceOptions = [
+    //     'Minimal', 
+    //     'Extensive'
+    // ];
 
-    const plantBasedOptions = [
-        'Yes', 
-        'No', 
-        'No Preference'
-    ];
+    // const plantBasedOptions = [
+    //     'Yes', 
+    //     'No', 
+    //     'No preference'
+    // ];
 
     // Add state for accordion sections
     let openSections = $state({
@@ -166,6 +166,30 @@
         return newSelections.length > 0 ? newSelections : ['None'];
     }
 
+    // Handle checkbox changes for multi-select
+    function handleCheckboxChange(value: string, currentSelections: string[]): string[] {
+        // If selecting "None"
+        if (value === 'None') {
+            // If None was already selected, keep None selected
+            if (currentSelections.includes('None')) {
+                return ['None'];
+            }
+            // Otherwise, select only None and deselect others
+            return ['None'];
+        }
+        
+        // If selecting a non-None option
+        if (currentSelections.includes(value)) {
+            // If option was already selected, remove it
+            const newSelections = currentSelections.filter(option => option !== value);
+            // If no options left, default to None
+            return newSelections.length > 0 ? newSelections.filter(option => option !== 'None') : ['None'];
+        } else {
+            // Add the new option and remove None if it was selected
+            return [...currentSelections.filter(option => option !== 'None'), value];
+        }
+    }
+
     function generatePrompt() {
         // Format multi-select values for the prompt
         const allergiesStr = allergiesIntolerances.includes('None') ? 'None' : allergiesIntolerances.join(', ');
@@ -181,15 +205,10 @@ Gender: ${gender}
 Age: ${age}
 Height: ${height}
 Weight: ${weight} lb
-Allergies/Intolerances: ${allergiesStr}
 Existing Health Conditions: ${healthConditionsStr}
 Symptoms Experienced: ${symptomsStr}
+Allergies/Intolerances: ${allergiesStr}
 Current Medications: ${medications || 'None'}
-Exercise Frequency: ${exerciseFrequency}
-Exercise Types: ${exerciseTypesStr}
-Price Range: ${priceRange}
-Ingredient Preference: ${ingredientPreference}
-Plant-Based Preference: ${plantBasedPreference}
 
 ADDITIONAL INFORMATION:
 ${additionalInfo || 'None'}
@@ -205,7 +224,26 @@ ${additionalInfo || 'None'}
 <style>
     /* Add smooth transition styles */
     .accordion-content {
-        transition: all 0.2s ease-in-out;
+        transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+        overflow: hidden;
+    }
+    
+    .accordion-content.closed {
+        max-height: 0;
+        opacity: 0;
+        padding: 0;
+        border-top-width: 0;
+    }
+    
+    .accordion-content.open {
+        max-height: 2000px; /* Large enough to contain all content */
+        opacity: 1;
+    }
+
+    .accordion-inner {
+        padding: 1rem;
+        border-top-width: 1px;
+        border-color: inherit;
     }
 
     .chevron {
@@ -239,7 +277,7 @@ ${additionalInfo || 'None'}
 <div class="flex h-screen">
     <div class="flex flex-col border-l dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden w-full">
         <div class="flex-none p-4">
-            <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Supplement Information</h2>
+            <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Recommendation Form</h2>
         </div>
 
         <form 
@@ -257,11 +295,8 @@ ${additionalInfo || 'None'}
                     <span class="chevron transform {openSections.healthGoals ? 'rotate-180' : ''}">▼</span>
                 </button>
                 
-                <div 
-                    class="accordion-content overflow-hidden"
-                    style="max-height: {openSections.healthGoals ? '500px' : '0'}; opacity: {openSections.healthGoals ? '1' : '0'}"
-                >
-                    <div class="p-4 border-t dark:border-gray-700">
+                <div class="accordion-content {openSections.healthGoals ? 'open' : 'closed'}">
+                    <div class="accordion-inner border-t dark:border-gray-700">
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-2">
                                 <label for="primaryHealthGoal" class="text-sm text-gray-600 dark:text-gray-400">What is your primary health goal?</label>
@@ -304,11 +339,8 @@ ${additionalInfo || 'None'}
                     <span class="chevron transform {openSections.generalInfo ? 'rotate-180' : ''}">▼</span>
                 </button>
                 
-                <div 
-                    class="accordion-content overflow-hidden"
-                    style="max-height: {openSections.generalInfo ? '800px' : '0'}; opacity: {openSections.generalInfo ? '1' : '0'}"
-                >
-                    <div class="p-4 border-t dark:border-gray-700">
+                <div class="accordion-content {openSections.generalInfo ? 'open' : 'closed'}">
+                    <div class="accordion-inner border-t dark:border-gray-700">
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-2">
                                 <label for="gender" class="text-sm text-gray-600 dark:text-gray-400">What is your gender?</label>
@@ -324,15 +356,25 @@ ${additionalInfo || 'None'}
                             </div>
 
                             <div class="flex flex-col gap-2">
-                                <label for="age" class="text-sm text-gray-600 dark:text-gray-400">What is your age?</label>
-                                <input
-                                    id="age"
-                                    type="number"
-                                    bind:value={age}
-                                    min="0"
-                                    max="150"
-                                    class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                />
+                                <label for="age" class="text-sm text-gray-600 dark:text-gray-400">What is your age (years)?</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        id="age-range"
+                                        type="range"
+                                        bind:value={age}
+                                        min="0"
+                                        max="150"
+                                        step="1"
+                                        class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                    />
+                                    <input
+                                        id="age-display"
+                                        type="number"
+                                        value={age}
+                                        readonly
+                                        class="w-16 text-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm"
+                                    />
+                                </div>
                             </div>
 
                             <div class="flex flex-col gap-2">
@@ -349,37 +391,25 @@ ${additionalInfo || 'None'}
                             </div>
 
                             <div class="flex flex-col gap-2">
-                                <label for="weight" class="text-sm text-gray-600 dark:text-gray-400">What is your weight (Pounds/lb)?</label>
-                                <select
-                                    id="weight"
-                                    bind:value={weight}
-                                    class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                >
-                                    {#each weightOptions as option}
-                                        <option value={option}>{option}</option>
-                                    {/each}
-                                </select>
-                            </div>
-
-                            <div class="flex flex-col gap-2">
-                                <label for="allergies" class="text-sm text-gray-600 dark:text-gray-400">Do you have any known allergies or intolerances?</label>
-                                <select
-                                    id="allergies"
-                                    multiple
-                                    size="4"
-                                    class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                    on:change={(e) => allergiesIntolerances = handleMultiSelect(e, allergyOptions, allergiesIntolerances)}
-                                >
-                                    {#each allergyOptions as option}
-                                        <option 
-                                            value={option} 
-                                            selected={allergiesIntolerances.includes(option)}
-                                        >
-                                            {option}
-                                        </option>
-                                    {/each}
-                                </select>
-                                <span class="text-xs text-gray-500">Hold Ctrl (or Cmd) to select multiple options</span>
+                                <label for="weight" class="text-sm text-gray-600 dark:text-gray-400">What is your weight (lb)?</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        id="weight-range"
+                                        type="range"
+                                        bind:value={weight}
+                                        min="50"
+                                        max="350"
+                                        step="1"
+                                        class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                    />
+                                    <input
+                                        id="weight-display"
+                                        type="number"
+                                        value={weight}
+                                        readonly
+                                        class="w-16 text-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -397,52 +427,61 @@ ${additionalInfo || 'None'}
                     <span class="chevron transform {openSections.medicalConditions ? 'rotate-180' : ''}">▼</span>
                 </button>
                 
-                <div 
-                    class="accordion-content overflow-hidden"
-                    style="max-height: {openSections.medicalConditions ? '800px' : '0'}; opacity: {openSections.medicalConditions ? '1' : '0'}"
-                >
-                    <div class="p-4 border-t dark:border-gray-700">
+                <div class="accordion-content {openSections.medicalConditions ? 'open' : 'closed'}">
+                    <div class="accordion-inner border-t dark:border-gray-700">
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-2">
-                                <label for="healthConditions" class="text-sm text-gray-600 dark:text-gray-400">Do you have any existing health conditions?</label>
-                                <select
-                                    id="healthConditions"
-                                    multiple
-                                    size="4"
-                                    class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                    on:change={(e) => healthConditions = handleMultiSelect(e, healthConditionOptions, healthConditions)}
-                                >
+                                <label class="text-sm text-gray-600 dark:text-gray-400">Do you have any existing health conditions?</label>
+                                <div class="flex flex-col gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-3">
                                     {#each healthConditionOptions as option}
-                                        <option 
-                                            value={option} 
-                                            selected={healthConditions.includes(option)}
-                                        >
-                                            {option}
-                                        </option>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                value={option}
+                                                checked={healthConditions.includes(option)}
+                                                on:change={() => healthConditions = handleCheckboxChange(option, healthConditions)}
+                                                class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-500"
+                                            />
+                                            <span class="text-sm">{option}</span>
+                                        </label>
                                     {/each}
-                                </select>
-                                <span class="text-xs text-gray-500">Hold Ctrl (or Cmd) to select multiple options</span>
+                                </div>
                             </div>
 
                             <div class="flex flex-col gap-2">
                                 <label for="symptoms" class="text-sm text-gray-600 dark:text-gray-400">Have you experienced any of the following?</label>
-                                <select
-                                    id="symptoms"
-                                    multiple
-                                    size="4"
-                                    class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                    on:change={(e) => symptoms = handleMultiSelect(e, symptomOptions, symptoms)}
-                                >
+                                <div class="flex flex-col gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-3">
                                     {#each symptomOptions as option}
-                                        <option 
-                                            value={option} 
-                                            selected={symptoms.includes(option)}
-                                        >
-                                            {option}
-                                        </option>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                value={option}
+                                                checked={symptoms.includes(option)}
+                                                on:change={() => symptoms = handleCheckboxChange(option, symptoms)}
+                                                class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-500"
+                                            />
+                                            <span class="text-sm">{option}</span>
+                                        </label>
                                     {/each}
-                                </select>
-                                <span class="text-xs text-gray-500">Hold Ctrl (or Cmd) to select multiple options</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <label for="allergies" class="text-sm text-gray-600 dark:text-gray-400">Do you have any known allergies or intolerances?</label>
+                                <div class="flex flex-col gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-3">
+                                    {#each allergyOptions as option}
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                value={option}
+                                                checked={allergiesIntolerances.includes(option)}
+                                                on:change={() => allergiesIntolerances = handleCheckboxChange(option, allergiesIntolerances)}
+                                                class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-500"
+                                            />
+                                            <span class="text-sm">{option}</span>
+                                        </label>
+                                    {/each}
+                                </div>
                             </div>
 
                             <div class="flex flex-col gap-2">
@@ -450,7 +489,7 @@ ${additionalInfo || 'None'}
                                 <textarea
                                     id="medications"
                                     bind:value={medications}
-                                    placeholder="Please list any medications you're currently taking"
+                                    placeholder="Please list any medications you're currently taking seperated by comma"
                                     rows="3"
                                     class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
                                 ></textarea>
@@ -461,7 +500,7 @@ ${additionalInfo || 'None'}
             </div>
 
             <!-- Section 4: Lifestyle and Activity -->
-            <div class="border rounded-lg dark:border-gray-700">
+            <!-- <div class="border rounded-lg dark:border-gray-700">
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -513,10 +552,10 @@ ${additionalInfo || 'None'}
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Section 5: Preferences -->
-            <div class="border rounded-lg dark:border-gray-700">
+            <!-- <div class="border rounded-lg dark:border-gray-700">
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -573,11 +612,12 @@ ${additionalInfo || 'None'}
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Section 6: Additional Information -->
             <div class="border rounded-lg dark:border-gray-700">
-                <button
+                
+                <!-- <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
                     on:click={() => toggleSection('additionalInfo')}
@@ -589,22 +629,23 @@ ${additionalInfo || 'None'}
                 <div 
                     class="accordion-content overflow-hidden"
                     style="max-height: {openSections.additionalInfo ? '500px' : '0'}; opacity: {openSections.additionalInfo ? '1' : '0'}"
-                >
+                > -->
                     <div class="p-4 border-t dark:border-gray-700">
-                        <div class="flex flex-col gap-4">
-                            <div class="flex flex-col gap-2">
-                                <label for="additionalInfo" class="text-sm text-gray-600 dark:text-gray-400">Is there anything else we should know to make the best recommendation?</label>
-                                <textarea
-                                    id="additionalInfo"
-                                    bind:value={additionalInfo}
-                                    placeholder="Please provide any additional information that might help us make better recommendations"
-                                    rows="4"
-                                    class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                ></textarea>
-                            </div>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-2">
+                            <label for="additionalInfo" class="text-sm text-gray-600 dark:text-gray-400">Is there anything else we should know to make the best recommendation?</label>
+                            <textarea
+                                id="additionalInfo"
+                                bind:value={additionalInfo}
+                                placeholder="Please provide any additional information that might help us make better recommendations"
+                                rows="4"
+                                class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                            ></textarea>
                         </div>
                     </div>
                 </div>
+
+                <!-- </div>  -->
             </div>
 
             <button
