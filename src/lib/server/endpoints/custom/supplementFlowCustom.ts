@@ -67,7 +67,7 @@ export function endpointSupplementFlow(
 	const tools = [
 		{
 			type: "function",
-			name: "getNutraceuticals",
+			name: "getAllRecommendations",
 			description:
 				"Provides nutraceuticals, products and educational vidoes recommendations as per user's profile.",
 			parameters: {
@@ -452,8 +452,26 @@ export function endpointSupplementFlow(
 		const input = [
 			{
 				role: "system",
-				content:
-					"You are a friendly health advisor, who helps user to improve their helath based on their health information. Use the tools getProductsRecommendations, getNutraceuticals, getYoutubeVideos to provide the user with the best recommendations.",
+				content: `
+You are a friendly and knowledgeable health advisor. Your job is to assist users in discovering health supplements tailored to their goals and preferences.
+
+#Flow:
+Accept the user's input on their health goals, concerns, or symptoms.
+Assess whether enough information is provided to recommend supplements: 
+- If yes, call the getAllRecommendations tool with the user's details.
+- If no, ask polite follow-up questions to collect the needed info.
+
+#IMPORTANT Response Rule After Tool Call:
+When you receive the tool output from getAllRecommendations, you MUST DO THE FOLLOWING:
+- Prefix the output with the friendly line:
+- Then immediately follow it with the raw output received from tool getAllRecommendations inside a code block.
+  Example: { ...exact output received from getAllRecommendations tool... }
+  Note: Do not changes to keys, structure, or values.
+  
+#Close your message with a thoughtful question to help users achieve their health goals.
+
+#Maintain a warm, supportive tone throughout the interaction, but strictly follow the format and output instructions above.
+`,
 			},
 		];
 
@@ -482,51 +500,13 @@ export function endpointSupplementFlow(
 					continue;
 				}
 
-				if (toolCall.name === "getNutraceuticals") {
+				if (toolCall.name === "getAllRecommendations") {
 					// Parse the function arguments
 					const functionArgs: HealthInformation = JSON.parse(toolCall.arguments);
-					console.log("getNutraceuticals", functionArgs);
+					console.log("getAllRecommendations", functionArgs);
 
 					// Call the function
-					const result = await getNutraceuticals(functionArgs);
-
-					input.push(toolCall);
-
-					input.push({
-						type: "function_call_output",
-						call_id: toolCall.call_id,
-						output: result.toString(),
-					});
-
-					toolUsed = true;
-				} else if (toolCall.name === "getYoutubeVideos") {
-					// Parse the function arguments
-					const functionArgs = JSON.parse(toolCall.arguments);
-
-					console.log("getYoutubeVideos", functionArgs);
-					// Call the function
-					const result = await getYoutubeVideos(functionArgs.supplement);
-
-					input.push(toolCall);
-
-					input.push({
-						type: "function_call_output",
-						call_id: toolCall.call_id,
-						output: result.toString(),
-					});
-
-					toolUsed = true;
-				} else if (toolCall.name === "getProductsRecommendations") {
-					// Parse the function arguments
-					const functionArgs = JSON.parse(toolCall.arguments);
-
-					console.log("getProductsRecommendations", functionArgs);
-
-					// Call the function
-					const result = await getProductsRecommendations(
-						functionArgs.supplement,
-						functionArgs.gender
-					);
+					const result = await getAllRecommendations(functionArgs);
 
 					input.push(toolCall);
 
@@ -728,4 +708,68 @@ export function endpointSupplementFlow(
 			})();
 		}
 	};
+
+	async function getAllRecommendations(healthInfo: HealthInformation) {
+		// // Arrays to store each type of recommendation
+		const nutraceuticalRecommendationsArray = await getNutraceuticals(healthInfo);
+
+		let productRecommendationsArray: ProductRecommendation[] = [];
+		let educationalVideosArray: EducationalVideo[] = [];
+
+		// Step 2: Get educational videos and product recommendations for each supplement
+		// We use Promise.all to run these requests in parallel
+		await Promise.all(
+			nutraceuticalRecommendationsArray.map(async (supplement: NutraceuticalRecommendation) => {
+				// Get videos for this supplement
+				const videos = await getYoutubeVideos(supplement.nutraceutical_name);
+
+				if (videos && videos.length > 0) {
+					educationalVideosArray = educationalVideosArray.concat(videos);
+				}
+
+				// Get products for this supplement
+				const products = await getProductsRecommendations(
+					supplement.nutraceutical_name,
+					supplement.user_gender
+				);
+				if (products && products.length > 0) {
+					productRecommendationsArray = productRecommendationsArray.concat(products);
+				}
+			})
+		);
+
+		// Format the response with text headings and JSON arrays
+		let formattedResponse = "";
+
+		// Add product recommendations section
+		if (productRecommendationsArray.length > 0) {
+			formattedResponse += "Here are the recommended products for you:\n```json\n";
+			formattedResponse += JSON.stringify(
+				{ product_recommendations: productRecommendationsArray },
+				null,
+				2
+			);
+			formattedResponse += "\n```\n\n";
+		}
+
+		// Add nutraceutical recommendations section
+		if (nutraceuticalRecommendationsArray.length > 0) {
+			formattedResponse += "Here are the recommended nutraceuticals for you:\n```json\n";
+			formattedResponse += JSON.stringify(
+				{ nutraceutical_recommendations: nutraceuticalRecommendationsArray },
+				null,
+				2
+			);
+			formattedResponse += "\n```\n\n";
+		}
+
+		// Add educational videos section
+		if (educationalVideosArray.length > 0) {
+			formattedResponse += "Here are the recommended tutorials for you:\n```json\n";
+			formattedResponse += JSON.stringify({ educational_videos: educationalVideosArray }, null, 2);
+			formattedResponse += "\n```\n\n";
+		}
+
+		return formattedResponse;
+	}
 }
