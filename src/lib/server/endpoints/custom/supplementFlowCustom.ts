@@ -78,8 +78,8 @@ export function endpointSupplementFlow(
 						description: "The user's main health goal",
 						enum: [
 							"Weight loss",
-							"Muscle Gain",
-							"Improved Energy",
+							"Muscle gain",
+							"Improved energy",
 							"Boosted immunity",
 							"Better sleep",
 							"Enhanced focus and mental clarity",
@@ -91,8 +91,8 @@ export function endpointSupplementFlow(
 						description: "The user's secondary health goal",
 						enum: [
 							"Weight loss",
-							"Muscle Gain",
-							"Improved Energy",
+							"Muscle gain",
+							"Improved energy",
 							"Boosted immunity",
 							"Better sleep",
 							"Enhanced focus and mental clarity",
@@ -141,33 +141,33 @@ export function endpointSupplementFlow(
 						type: "string",
 						description: "Medications the user is currently taking",
 					},
-					exerciseFrequency: {
-						type: "string",
-						description: "How often the user exercises",
-						enum: ["Never", "1-2 times per week", "3-4 times per week", "5+ times per week"],
-					},
-					exerciseTypes: {
-						type: "array",
-						description: "Types of exercise the user does",
-						items: {
-							type: "string",
-						},
-					},
-					priceRange: {
-						type: "string",
-						description: "User's preferred price range for supplements",
-						enum: ["10$-20$", "20$-40$", "40$+", "No limit"],
-					},
-					ingredientPreference: {
-						type: "string",
-						description: "User's preference for supplement ingredients",
-						enum: ["Minimal", "Extensive"],
-					},
-					plantBasedPreference: {
-						type: "string",
-						description: "User's preference for plant-based supplements",
-						enum: ["Yes", "No", "No Preference"],
-					},
+					// exerciseFrequency: {
+					// 	type: "string",
+					// 	description: "How often the user exercises",
+					// 	enum: ["Never", "1-2 times per week", "3-4 times per week", "5+ times per week"],
+					// },
+					// exerciseTypes: {
+					// 	type: "array",
+					// 	description: "Types of exercise the user does",
+					// 	items: {
+					// 		type: "string",
+					// 	},
+					// },
+					// priceRange: {
+					// 	type: "string",
+					// 	description: "User's preferred price range for supplements",
+					// 	enum: ["10$-20$", "20$-40$", "40$+", "No limit"],
+					// },
+					// ingredientPreference: {
+					// 	type: "string",
+					// 	description: "User's preference for supplement ingredients",
+					// 	enum: ["Minimal", "Extensive"],
+					// },
+					// plantBasedPreference: {
+					// 	type: "string",
+					// 	description: "User's preference for plant-based supplements",
+					// 	enum: ["Yes", "No", "No Preference"],
+					// },
 					additionalInfo: {
 						type: "string",
 						description: "Any additional information provided by the user",
@@ -182,13 +182,13 @@ export function endpointSupplementFlow(
 					"weight",
 					"allergiesIntolerances",
 					"healthConditions",
-					"medications",
 					"symptoms",
-					"exerciseFrequency",
-					"exerciseTypes",
-					"priceRange",
-					"ingredientPreference",
-					"plantBasedPreference",
+					"medications",
+					// "exerciseFrequency",
+					// "exerciseTypes",
+					// "priceRange",
+					// "ingredientPreference",
+					// "plantBasedPreference",
 					"additionalInfo",
 				],
 				additionalProperties: false,
@@ -252,21 +252,12 @@ export function endpointSupplementFlow(
 	  Age= ${healthInfo.age}
 	  Height= ${healthInfo.height}
 	  Weight= ${healthInfo.weight} lb
-	  Allergies/Intolerances= ${formatArray(healthInfo.allergiesIntolerances)}
 	  
 	  MEDICAL AND HEALTH CONDITIONS
+	  Allergies/Intolerances= ${formatArray(healthInfo.allergiesIntolerances)}
 	  Existing Health Conditions= ${formatArray(healthInfo.healthConditions)}
 	  Symptoms Experienced= ${formatArray(healthInfo.symptoms)}
 	  Current Medications= ${healthInfo.medications || "None"}
-	  
-	  LIFESTYLE AND ACTIVITY
-	  Exercise Frequency= ${healthInfo.exerciseFrequency}
-	  Exercise Types= ${formatArray(healthInfo.exerciseTypes)}
-	  
-	  PREFERENCES
-	  Price Range= ${healthInfo.priceRange}
-	  Ingredient Preference= ${healthInfo.ingredientPreference}
-	  Plant-Based Preference= ${healthInfo.plantBasedPreference}
 	  
 	  ADDITIONAL INFORMATION
 	  ${healthInfo.additionalInfo || "None"}`;
