@@ -503,12 +503,12 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 				if (toolCall.name === "getAllRecommendations") {
 					// Parse the function arguments
 					const functionArgs: HealthInformation = JSON.parse(toolCall.arguments);
-					console.log("getAllRecommendations", functionArgs);
+					// console.log("getAllRecommendations", functionArgs);
 
 					// Call the function
 					const result = await getAllRecommendations(functionArgs);
 
-					console.log("result", result);
+					// console.log("result", result);
 
 					input.push(toolCall);
 
