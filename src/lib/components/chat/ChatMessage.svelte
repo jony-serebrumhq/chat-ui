@@ -324,6 +324,8 @@
 		let newContent = message.content;
 		const jsonWithPositions = [];
 		const youtubeWithPositions = [];
+
+		console.log("allReplacements", newContent);
 		
 		// Replace each item with a special marker and collect the data
 		for (let i = 0; i < allReplacements.length; i++) {
@@ -351,6 +353,8 @@
 				});
 			}
 		}
+
+		console.log("newContent", newContent);
 		
 		processedContent = {
 			content: newContent,

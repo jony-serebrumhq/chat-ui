@@ -453,7 +453,7 @@ export function endpointSupplementFlow(
 			{
 				role: "system",
 				content: `
-You are a friendly and knowledgeable health advisor. Your job is to assist users in discovering health supplements tailored to their goals and preferences.
+You are a knowledgeable health advisor. Your job is to assist users in discovering health supplements tailored to their goals and preferences.
 
 #Flow:
 Accept the user's input on their health goals, concerns, or symptoms.
@@ -463,11 +463,11 @@ Assess whether enough information is provided to recommend supplements:
 
 #IMPORTANT Response Rule After Tool Call:
 When you receive the tool output from getAllRecommendations, you MUST DO THE FOLLOWING:
-- Prefix the output with the friendly line:
+- Prefix the output with the friendly line. 
 - Then immediately follow it with the raw output received from tool getAllRecommendations inside a code block.
-  Example: { ...exact output received from getAllRecommendations tool... }
-  Note: Do not changes to keys, structure, or values.
-  
+    Example: { ...exact JSON output received from getAllRecommendations tool... }
+    Note: Do not add any other text or formatting to the output from the getAllRecommendations tool.
+
 #Close your message with a thoughtful question to help users achieve their health goals.
 
 #Maintain a warm, supportive tone throughout the interaction, but strictly follow the format and output instructions above.
@@ -507,6 +507,8 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 
 					// Call the function
 					const result = await getAllRecommendations(functionArgs);
+
+					console.log("result", result);
 
 					input.push(toolCall);
 
@@ -743,30 +745,24 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 
 		// Add product recommendations section
 		if (productRecommendationsArray.length > 0) {
-			formattedResponse += "Here are the recommended products for you:\n```json\n";
-			formattedResponse += JSON.stringify(
-				{ product_recommendations: productRecommendationsArray },
-				null,
-				2
-			);
+			formattedResponse += "Product Recommendations:\n```json\n";
+			formattedResponse += JSON.stringify({ product_recommendations: productRecommendationsArray });
 			formattedResponse += "\n```\n\n";
 		}
 
 		// Add nutraceutical recommendations section
 		if (nutraceuticalRecommendationsArray.length > 0) {
-			formattedResponse += "Here are the recommended nutraceuticals for you:\n```json\n";
-			formattedResponse += JSON.stringify(
-				{ nutraceutical_recommendations: nutraceuticalRecommendationsArray },
-				null,
-				2
-			);
+			formattedResponse += "Nutraceutical Recommendations:\n```json\n";
+			formattedResponse += JSON.stringify({
+				nutraceutical_recommendations: nutraceuticalRecommendationsArray,
+			});
 			formattedResponse += "\n```\n\n";
 		}
 
 		// Add educational videos section
 		if (educationalVideosArray.length > 0) {
-			formattedResponse += "Here are the recommended tutorials for you:\n```json\n";
-			formattedResponse += JSON.stringify({ educational_videos: educationalVideosArray }, null, 2);
+			formattedResponse += "Educational Videos:\n```json\n";
+			formattedResponse += JSON.stringify({ educational_videos: educationalVideosArray });
 			formattedResponse += "\n```\n\n";
 		}
 
