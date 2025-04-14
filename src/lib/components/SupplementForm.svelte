@@ -197,9 +197,8 @@
         const symptomsStr = symptoms.includes('None') ? 'None' : symptoms.join(', ');
         const exerciseTypesStr = exerciseTypes.includes('None') ? 'None' : exerciseTypes.join(', ');
 
-        return `Based on my profile below, please recommend supplements that might be beneficial:
+        return `Based on my profile below, please recommend supplements, products and educational vidoes and that might be beneficial:
 
-#User Profile:
 Primary Health Goal: ${primaryHealthGoal}
 Secondary Health Goal: ${secondaryHealthGoal}
 Gender: ${gender}

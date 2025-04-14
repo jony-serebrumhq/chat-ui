@@ -274,21 +274,21 @@
 			isEducationalVideos: boolean;
 			isNutraceuticalRecommendation: boolean;
 		}>;
-		youtubeEmbeds: Array<{
-			videoId: string;
-			position: number;  // Position where the embed should be inserted
-		}>;
+		// youtubeEmbeds: Array<{
+		// 	videoId: string;
+		// 	position: number;  // Position where the embed should be inserted
+		// }>;
 	}
 
 	let processedContent: ProcessedContent = $state({ 
 		content: "", 
 		jsonData: [],
-		youtubeEmbeds: []
+		// youtubeEmbeds: []
 	});
 
 	$effect(() => {
 		if (!message.content) {
-			processedContent = { content: "", jsonData: [], youtubeEmbeds: [] };
+			processedContent = { content: "", jsonData: [] };
 			return;
 		}
 		
@@ -318,12 +318,12 @@
 		
 		const allReplacements = [
 			...jsonResults.map(item => ({ type: 'json', ...item } as JsonReplacement)),
-			...youtubeLinks.map(item => ({ type: 'youtube', ...item } as YoutubeReplacement))
+			// ...youtubeLinks.map(item => ({ type: 'youtube', ...item } as YoutubeReplacement))
 		].sort((a, b) => b.start - a.start);
 		
 		let newContent = message.content;
 		const jsonWithPositions = [];
-		const youtubeWithPositions = [];
+		// const youtubeWithPositions = [];
 		
 		// Replace each item with a special marker and collect the data
 		for (let i = 0; i < allReplacements.length; i++) {
@@ -341,21 +341,24 @@
 					isEducationalVideos: jsonItem.isEducationalVideos,
 					isNutraceuticalRecommendation: jsonItem.isNutraceuticalRecommendation
 				});
-			} else if (type === 'youtube') {
-				const youtubeItem = item as YoutubeReplacement;
-				const marker = `__YOUTUBE_EMBED_${youtubeWithPositions.length}__`;
-				newContent = newContent.slice(0, start) + marker + newContent.slice(end);
-				youtubeWithPositions.push({
-					videoId: youtubeItem.videoId,
-					position: start
-				});
-			}
+			} 
+			// else if (type === 'youtube') {
+			// 	const youtubeItem = item as YoutubeReplacement;
+			// 	const marker = `__YOUTUBE_EMBED_${youtubeWithPositions.length}__`;
+			// 	newContent = newContent.slice(0, start) + marker + newContent.slice(end);
+			// 	youtubeWithPositions.push({
+			// 		videoId: youtubeItem.videoId,
+			// 		position: start
+			// 	});
+			// }
 		}
+
+		// console.log("newContent", newContent);
 		
 		processedContent = {
 			content: newContent,
 			jsonData: jsonWithPositions,
-			youtubeEmbeds: youtubeWithPositions
+			// youtubeEmbeds: youtubeWithPositions
 		};
 	});
 </script>
@@ -445,13 +448,13 @@
 										{/if}
 									</div>
 								{/if}
-							{:else if part.startsWith('__YOUTUBE_EMBED_')}
+							<!-- {:else if part.startsWith('__YOUTUBE_EMBED_')}
 								{@const index = parseInt(part.match(/\d+/)?.[0] ?? '-1')}
 								{#if index >= 0 && index < processedContent.youtubeEmbeds.length}
 									<div class="my-4">
 										<YouTubeEmbed videoId={processedContent.youtubeEmbeds[index].videoId} />
 									</div>
-								{/if}
+								{/if} -->
 							{:else}
 								<MarkdownRenderer content={part} sources={webSearchSources} />
 							{/if}

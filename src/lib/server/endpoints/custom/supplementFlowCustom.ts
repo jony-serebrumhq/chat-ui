@@ -11,6 +11,26 @@ export const endpointSupplementFlowParametersSchema = z.object({
 	vectorStoreId: z.string(),
 });
 
+// Define a type for the structured health information
+interface HealthInformation {
+	primaryHealthGoal: string;
+	secondaryHealthGoal: string;
+	gender: string;
+	age: number;
+	height: string;
+	weight: string;
+	allergiesIntolerances: string[];
+	healthConditions: string[];
+	symptoms: string[];
+	medications: string;
+	exerciseFrequency: string;
+	exerciseTypes: string[];
+	priceRange: string;
+	ingredientPreference: string;
+	plantBasedPreference: string;
+	additionalInfo?: string;
+}
+
 // Define types for our data structures
 interface NutraceuticalRecommendation {
 	nutraceutical_name: string;
@@ -44,11 +64,211 @@ export function endpointSupplementFlow(
 		apiKey: openaiApiKey,
 	});
 
+	const tools = [
+		{
+			type: "function",
+			name: "getAllRecommendations",
+			description:
+				"Provides nutraceuticals, products and educational vidoes recommendations as per user's profile.",
+			parameters: {
+				type: "object",
+				properties: {
+					primaryHealthGoal: {
+						type: "string",
+						description: "The user's main health goal",
+						enum: [
+							"Weight loss",
+							"Muscle gain",
+							"Improved energy",
+							"Boosted immunity",
+							"Better sleep",
+							"Enhanced focus and mental clarity",
+							"Healthy aging",
+						],
+					},
+					secondaryHealthGoal: {
+						type: "string",
+						description: "The user's secondary health goal",
+						enum: [
+							"Weight loss",
+							"Muscle gain",
+							"Improved energy",
+							"Boosted immunity",
+							"Better sleep",
+							"Enhanced focus and mental clarity",
+							"Healthy aging",
+						],
+					},
+					gender: {
+						type: "string",
+						description: "The user's gender",
+						enum: ["Male", "Female", "Non-binary", "Prefer not to say"],
+					},
+					age: {
+						type: "number",
+						description: "The user's age",
+					},
+					height: {
+						type: "string",
+						description: "The user's height",
+					},
+					weight: {
+						type: "string",
+						description: "The user's weight range in pounds",
+					},
+					allergiesIntolerances: {
+						type: "array",
+						description: "List of user's allergies and intolerances",
+						items: {
+							type: "string",
+						},
+					},
+					healthConditions: {
+						type: "array",
+						description: "List of user's health conditions",
+						items: {
+							type: "string",
+						},
+					},
+					symptoms: {
+						type: "array",
+						description: "List of symptoms the user experiences",
+						items: {
+							type: "string",
+						},
+					},
+					medications: {
+						type: "string",
+						description: "Medications the user is currently taking",
+					},
+					// exerciseFrequency: {
+					// 	type: "string",
+					// 	description: "How often the user exercises",
+					// 	enum: ["Never", "1-2 times per week", "3-4 times per week", "5+ times per week"],
+					// },
+					// exerciseTypes: {
+					// 	type: "array",
+					// 	description: "Types of exercise the user does",
+					// 	items: {
+					// 		type: "string",
+					// 	},
+					// },
+					// priceRange: {
+					// 	type: "string",
+					// 	description: "User's preferred price range for supplements",
+					// 	enum: ["10$-20$", "20$-40$", "40$+", "No limit"],
+					// },
+					// ingredientPreference: {
+					// 	type: "string",
+					// 	description: "User's preference for supplement ingredients",
+					// 	enum: ["Minimal", "Extensive"],
+					// },
+					// plantBasedPreference: {
+					// 	type: "string",
+					// 	description: "User's preference for plant-based supplements",
+					// 	enum: ["Yes", "No", "No Preference"],
+					// },
+					additionalInfo: {
+						type: "string",
+						description: "Any additional information provided by the user",
+					},
+				},
+				required: [
+					"primaryHealthGoal",
+					"secondaryHealthGoal",
+					"gender",
+					"age",
+					"height",
+					"weight",
+					"allergiesIntolerances",
+					"healthConditions",
+					"symptoms",
+					"medications",
+					// "exerciseFrequency",
+					// "exerciseTypes",
+					// "priceRange",
+					// "ingredientPreference",
+					// "plantBasedPreference",
+					"additionalInfo",
+				],
+				additionalProperties: false,
+			},
+			strict: true,
+		},
+		// {
+		// 	"type": "function",
+		// 	"name": "getYoutubeVideos",
+		// 	"description": "Searches for educational YouTube videos about a specific supplement.",
+		// 	"parameters": {
+		// 			"type": "object",
+		// 			"properties": {
+		// 				"supplement": {
+		// 					"type": "string",
+		// 					"description": "The name of the supplement to search videos for"
+		// 				}
+		// 			},
+		// 			"required": ["supplement"],
+		// 			"additionalProperties": false
+		// 	},
+		// 	"strict": true
+		// },
+		// {
+		// 	"type": "function",
+		// 	"name": "getProductsRecommendations",
+		// 	"description": "Provides product recommendations for a specific supplement appropriate for the user's gender.",
+		// 	"parameters": {
+		// 			"type": "object",
+		// 			"properties": {
+		// 				"supplement": {
+		// 					"type": "string",
+		// 					"description": "The name of the supplement to find products for"
+		// 				},
+		// 				"gender": {
+		// 					"type": "string",
+		// 					"description": "The user's gender for gender-appropriate recommendations",
+		// 					"enum": ["Male", "Female", "Non-binary", "Prefer not to say"]
+		// 				}
+		// 			},
+		// 			"required": ["supplement", "gender"],
+		// 			"additionalProperties": false
+		// 	},
+		// 	"strict": true
+		// 	}
+	];
+
+	function formatHealthInfoForPrompt(healthInfo: HealthInformation): string {
+		// Format array values, using 'None' if the array only contains 'None'
+		const formatArray = (arr: string[]): string => {
+			return arr.includes("None") ? "None" : arr.join(", ");
+		};
+
+		return `
+	  HEALTH GOALS
+	  Primary Health Goal= ${healthInfo.primaryHealthGoal}
+	  Secondary Health Goal= ${healthInfo.secondaryHealthGoal}
+	  
+	  GENERAL INFORMATION
+	  Gender= ${healthInfo.gender}
+	  Age= ${healthInfo.age}
+	  Height= ${healthInfo.height}
+	  Weight= ${healthInfo.weight} lb
+	  
+	  MEDICAL AND HEALTH CONDITIONS
+	  Allergies/Intolerances= ${formatArray(healthInfo.allergiesIntolerances)}
+	  Existing Health Conditions= ${formatArray(healthInfo.healthConditions)}
+	  Symptoms Experienced= ${formatArray(healthInfo.symptoms)}
+	  Current Medications= ${healthInfo.medications || "None"}
+	  
+	  ADDITIONAL INFORMATION
+	  ${healthInfo.additionalInfo || "None"}`;
+	}
+
 	// Nutraceutical Consultant Agent
-	async function nutraceuticalConsultant(
-		userInput: string
+	async function getNutraceuticals(
+		healthInfo: HealthInformation
 	): Promise<NutraceuticalRecommendation[]> {
 		try {
+			const formattedHealthInfo = formatHealthInfoForPrompt(healthInfo);
 			const response = await openai.responses.create({
 				model: "gpt-4o",
 				input: [
@@ -66,7 +286,7 @@ export function endpointSupplementFlow(
 						content: [
 							{
 								type: "input_text",
-								text: userInput,
+								text: formattedHealthInfo,
 							},
 						],
 					},
@@ -118,21 +338,16 @@ export function endpointSupplementFlow(
 	}
 
 	// YouTube Video Search Agent
-	async function youtubeVideoSearch(supplement: string): Promise<EducationalVideo[]> {
+	async function getYoutubeVideos(supplement: string): Promise<EducationalVideo[]> {
 		try {
 			const response = await openai.responses.create({
-				model: "gpt-4o-mini",
+				model: "gpt-4o",
 				tools: [{ type: "web_search_preview" }],
 				tool_choice: { type: "web_search_preview" },
 				input: [
 					{
 						role: "system",
-						content: [
-							{
-								type: "input_text",
-								text: `Use the web search tool and find an educational YouTube video about ${supplement}. Provide the nutraceutical name and video link in JSON format.`,
-							},
-						],
+						content: `Use the web search tool and find an educational YouTube video about ${supplement}. Provide the nutraceutical name and video link in JSON format.`,
 					},
 				],
 				text: {
@@ -172,7 +387,7 @@ export function endpointSupplementFlow(
 	}
 
 	// Product Consultant Agent
-	async function productConsultant(
+	async function getProductsRecommendations(
 		supplement: string,
 		gender: string
 	): Promise<ProductRecommendation[]> {
@@ -188,12 +403,7 @@ export function endpointSupplementFlow(
 				input: [
 					{
 						role: "system",
-						content: [
-							{
-								type: "input_text",
-								text: `You are a Product Consultant with access to a product catalog. Recommend a product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Include product name, image URL, description, and price. Respond strictly in JSON format.`,
-							},
-						],
+						content: `You are a Product Consultant with access to a product catalog. Recommend a product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Include product name, image URL, description, and price. Respond strictly in JSON format.`,
 					},
 				],
 				text: {
@@ -239,121 +449,196 @@ export function endpointSupplementFlow(
 		// Get the last 20 messages (or all messages if less than 20)
 		const contextMessages = messages.slice(Math.max(0, messages.length - 20));
 
-		// Format the conversation history
-		const conversationHistory = contextMessages
-			.map((msg) => `${msg.from === "user" ? "User" : "Assistant"}: ${msg.content}`)
-			.join("\n\n");
+		const input = [
+			{
+				role: "system",
+				content: `
+You are a knowledgeable health advisor. Your job is to assist users in discovering health supplements tailored to their goals and preferences.
+
+#Flow:
+Accept the user's input on their health goals, concerns, or symptoms.
+Assess whether enough information is provided to recommend supplements: 
+- If yes, call the getAllRecommendations tool with the user's details.
+- If no, ask polite follow-up questions to collect the needed info.
+
+#IMPORTANT Response Rule After Tool Call:
+When you receive the tool output from getAllRecommendations, you MUST DO THE FOLLOWING:
+- Prefix the output with the friendly line. 
+- Then immediately follow it with the raw output received from tool getAllRecommendations inside a code block.
+    Example: { ...exact JSON output received from getAllRecommendations tool... }
+    Note: Do not add any other text or formatting to the output from the getAllRecommendations tool.
+
+#Close your message with a thoughtful question to help users achieve their health goals.
+
+#Maintain a warm, supportive tone throughout the interaction, but strictly follow the format and output instructions above.
+`,
+			},
+		];
 
 		// Get the last message content as the user's health information
 		// const lastMessage = messages[messages.length - 1];
 		// const userHealthInfo = lastMessage.content;
 
+		// Convert contextMessages into the format requested
+		contextMessages.forEach((msg) => {
+			input.push({
+				role: msg.from === "user" ? "user" : "assistant",
+				content: msg.content,
+			});
+		});
+
 		try {
+			const response = await openai.responses.create({
+				model: "gpt-4o",
+				tools,
+				input,
+			});
+
+			let toolUsed = false;
+			for (const toolCall of response.output) {
+				if (toolCall.type !== "function_call") {
+					continue;
+				}
+
+				if (toolCall.name === "getAllRecommendations") {
+					// Parse the function arguments
+					const functionArgs: HealthInformation = JSON.parse(toolCall.arguments);
+					// console.log("getAllRecommendations", functionArgs);
+
+					// Call the function
+					const result = await getAllRecommendations(functionArgs);
+
+					// console.log("result", result);
+
+					input.push(toolCall);
+
+					input.push({
+						type: "function_call_output",
+						call_id: toolCall.call_id,
+						output: result.toString(),
+					});
+
+					toolUsed = true;
+				}
+
+				console.log("toolUsed", toolUsed);
+
+				if (toolUsed) {
+					// Send the function result back to the model
+					const finalResponse = await openai.responses.create({
+						model: "gpt-4o",
+						input,
+						tools,
+					});
+					response.output_text = finalResponse.output_text;
+				}
+			}
+
 			// Step 1: Get supplement recommendations
-			const supplementRecommendations = await nutraceuticalConsultant(conversationHistory);
+			// const supplementRecommendations = await getNutraceuticals(conversationHistory);
 
-			if (supplementRecommendations.length === 0) {
-				const noRecommendationsMessage =
-					"I couldn't find any specific supplement recommendations based on the information provided. Could you please share more details about your health concerns?";
+			// if (supplementRecommendations.length === 0) {
+			// 	const noRecommendationsMessage =
+			// 		"I couldn't find any specific supplement recommendations based on the information provided. Could you please share more details about your health concerns?";
 
-				return (async function* () {
-					yield {
-						token: {
-							id: 0,
-							text: noRecommendationsMessage,
-							logprob: 0,
-							special: false,
-						},
-						generated_text: null,
-						details: null,
-					} satisfies TextGenerationStreamOutput;
+			// 	return (async function* () {
+			// 		yield {
+			// 			token: {
+			// 				id: 0,
+			// 				text: noRecommendationsMessage,
+			// 				logprob: 0,
+			// 				special: false,
+			// 			},
+			// 			generated_text: null,
+			// 			details: null,
+			// 		} satisfies TextGenerationStreamOutput;
 
-					yield {
-						token: {
-							id: 1,
-							text: "",
-							logprob: 0,
-							special: true,
-						},
-						generated_text: noRecommendationsMessage,
-						details: null,
-					} satisfies TextGenerationStreamOutput;
-				})();
-			}
+			// 		yield {
+			// 			token: {
+			// 				id: 1,
+			// 				text: "",
+			// 				logprob: 0,
+			// 				special: true,
+			// 			},
+			// 			generated_text: noRecommendationsMessage,
+			// 			details: null,
+			// 		} satisfies TextGenerationStreamOutput;
+			// 	})();
+			// }
 
-			// Arrays to store each type of recommendation
-			let productRecommendationsArray: ProductRecommendation[] = [];
-			const nutraceuticalRecommendationsArray = [...supplementRecommendations];
-			let educationalVideosArray: EducationalVideo[] = [];
+			// // Arrays to store each type of recommendation
+			// let productRecommendationsArray: ProductRecommendation[] = [];
+			// const nutraceuticalRecommendationsArray = [...supplementRecommendations];
+			// let educationalVideosArray: EducationalVideo[] = [];
 
-			// Step 2: Get educational videos and product recommendations for each supplement
-			// We use Promise.all to run these requests in parallel
-			await Promise.all(
-				supplementRecommendations.map(async (supplement: NutraceuticalRecommendation) => {
-					// Get videos for this supplement
-					const videos = await youtubeVideoSearch(supplement.nutraceutical_name);
+			// // Step 2: Get educational videos and product recommendations for each supplement
+			// // We use Promise.all to run these requests in parallel
+			// await Promise.all(
+			// 	supplementRecommendations.map(async (supplement: NutraceuticalRecommendation) => {
+			// 		// Get videos for this supplement
+			// 		const videos = await getYoutubeVideos(supplement.nutraceutical_name);
 
-					if (videos && videos.length > 0) {
-						educationalVideosArray = educationalVideosArray.concat(videos);
-					}
+			// 		if (videos && videos.length > 0) {
+			// 			educationalVideosArray = educationalVideosArray.concat(videos);
+			// 		}
 
-					// Get products for this supplement
-					const products = await productConsultant(
-						supplement.nutraceutical_name,
-						supplement.user_gender
-					);
-					if (products && products.length > 0) {
-						productRecommendationsArray = productRecommendationsArray.concat(products);
-					}
-				})
-			);
+			// 		// Get products for this supplement
+			// 		const products = await getProductsRecommendations(
+			// 			supplement.nutraceutical_name,
+			// 			supplement.user_gender
+			// 		);
+			// 		if (products && products.length > 0) {
+			// 			productRecommendationsArray = productRecommendationsArray.concat(products);
+			// 		}
+			// 	})
+			// );
 
-			// Format the response with text headings and JSON arrays
-			let formattedResponse = "";
+			// // Format the response with text headings and JSON arrays
+			// let formattedResponse = "";
 
-			// Add product recommendations section
-			if (productRecommendationsArray.length > 0) {
-				formattedResponse += "Here are the recommended products for you:\n```json\n";
-				formattedResponse += JSON.stringify(
-					{ product_recommendations: productRecommendationsArray },
-					null,
-					2
-				);
-				formattedResponse += "\n```\n\n";
-			}
+			// // Add product recommendations section
+			// if (productRecommendationsArray.length > 0) {
+			// 	formattedResponse += "Here are the recommended products for you:\n```json\n";
+			// 	formattedResponse += JSON.stringify(
+			// 		{ product_recommendations: productRecommendationsArray },
+			// 		null,
+			// 		2
+			// 	);
+			// 	formattedResponse += "\n```\n\n";
+			// }
 
-			// Add nutraceutical recommendations section
-			if (nutraceuticalRecommendationsArray.length > 0) {
-				formattedResponse += "Here are the recommended nutraceuticals for you:\n```json\n";
-				formattedResponse += JSON.stringify(
-					{ nutraceutical_recommendations: nutraceuticalRecommendationsArray },
-					null,
-					2
-				);
-				formattedResponse += "\n```\n\n";
-			}
+			// // Add nutraceutical recommendations section
+			// if (nutraceuticalRecommendationsArray.length > 0) {
+			// 	formattedResponse += "Here are the recommended nutraceuticals for you:\n```json\n";
+			// 	formattedResponse += JSON.stringify(
+			// 		{ nutraceutical_recommendations: nutraceuticalRecommendationsArray },
+			// 		null,
+			// 		2
+			// 	);
+			// 	formattedResponse += "\n```\n\n";
+			// }
 
-			// Add educational videos section
-			if (educationalVideosArray.length > 0) {
-				formattedResponse += "Here are the recommended tutorials for you:\n```json\n";
-				formattedResponse += JSON.stringify(
-					{ educational_videos: educationalVideosArray },
-					null,
-					2
-				);
-				formattedResponse += "\n```\n\n";
-			}
+			// // Add educational videos section
+			// if (educationalVideosArray.length > 0) {
+			// 	formattedResponse += "Here are the recommended tutorials for you:\n```json\n";
+			// 	formattedResponse += JSON.stringify(
+			// 		{ educational_videos: educationalVideosArray },
+			// 		null,
+			// 		2
+			// 	);
+			// 	formattedResponse += "\n```\n\n";
+			// }
 
-			// If no recommendations were found
-			if (formattedResponse === "") {
-				formattedResponse =
-					"I couldn't find any specific recommendations based on the information provided. Could you please share more details about your health concerns?";
-			}
+			// // If no recommendations were found
+			// if (formattedResponse === "") {
+			// 	formattedResponse =
+			// 		"I couldn't find any specific recommendations based on the information provided. Could you please share more details about your health concerns?";
+			// }
 
 			// Return the stream generator function
 			return (async function* () {
 				// Simulate streaming by breaking the response into chunks
-				const words = formattedResponse.split(/(\s+)/);
+				const words = response.output_text.split(/(\s+)/);
 				let tokenId = 0;
 				let generatedText = "";
 				const chunkSize = 8; // Process several words at a time for smoother streaming
@@ -425,4 +710,62 @@ export function endpointSupplementFlow(
 			})();
 		}
 	};
+
+	async function getAllRecommendations(healthInfo: HealthInformation) {
+		// // Arrays to store each type of recommendation
+		const nutraceuticalRecommendationsArray = await getNutraceuticals(healthInfo);
+
+		let productRecommendationsArray: ProductRecommendation[] = [];
+		let educationalVideosArray: EducationalVideo[] = [];
+
+		// Step 2: Get educational videos and product recommendations for each supplement
+		// We use Promise.all to run these requests in parallel
+		await Promise.all(
+			nutraceuticalRecommendationsArray.map(async (supplement: NutraceuticalRecommendation) => {
+				// Get videos for this supplement
+				const videos = await getYoutubeVideos(supplement.nutraceutical_name);
+
+				if (videos && videos.length > 0) {
+					educationalVideosArray = educationalVideosArray.concat(videos);
+				}
+
+				// Get products for this supplement
+				const products = await getProductsRecommendations(
+					supplement.nutraceutical_name,
+					supplement.user_gender
+				);
+				if (products && products.length > 0) {
+					productRecommendationsArray = productRecommendationsArray.concat(products);
+				}
+			})
+		);
+
+		// Format the response with text headings and JSON arrays
+		let formattedResponse = "";
+
+		// Add product recommendations section
+		if (productRecommendationsArray.length > 0) {
+			formattedResponse += "Product Recommendations:\n```json\n";
+			formattedResponse += JSON.stringify({ product_recommendations: productRecommendationsArray });
+			formattedResponse += "\n```\n\n";
+		}
+
+		// Add nutraceutical recommendations section
+		if (nutraceuticalRecommendationsArray.length > 0) {
+			formattedResponse += "Nutraceutical Recommendations:\n```json\n";
+			formattedResponse += JSON.stringify({
+				nutraceutical_recommendations: nutraceuticalRecommendationsArray,
+			});
+			formattedResponse += "\n```\n\n";
+		}
+
+		// Add educational videos section
+		if (educationalVideosArray.length > 0) {
+			formattedResponse += "Educational Videos:\n```json\n";
+			formattedResponse += JSON.stringify({ educational_videos: educationalVideosArray });
+			formattedResponse += "\n```\n\n";
+		}
+
+		return formattedResponse;
+	}
 }

@@ -215,7 +215,7 @@
 					{/if}
 				</button>
 			</HoverTooltip> -->
-			{#if modelHasTools}
+			<!-- {#if modelHasTools}
 				<HoverTooltip
 					label="Generate	images"
 					position="top"
@@ -248,7 +248,7 @@
 						{/if}
 					</button>
 				</HoverTooltip>
-			{/if}
+			{/if} -->
 			{#if modelIsMultimodal || modelHasTools}
 				{@const mimeTypesString = mimeTypes
 					.map((m) => {
@@ -260,7 +260,7 @@
 						return m.split("/")[1];
 					})
 					.join(", ")}
-				<div class="flex items-center">
+				<!-- <div class="flex items-center">
 					<HoverTooltip
 						label={mimeTypesString.includes("*")
 							? "Upload any file"
@@ -283,8 +283,8 @@
 							{/if}
 						</label>
 					</HoverTooltip>
-				</div>
-				{#if mimeTypes.includes("image/*")}
+				</div> -->
+				<!-- {#if mimeTypes.includes("image/*")}
 					<HoverTooltip
 						label="Capture screenshot"
 						position="top"
@@ -309,7 +309,7 @@
 							<IconScreenshot classNames="text-xl" />
 						</button>
 					</HoverTooltip>
-				{/if}
+				{/if} -->
 			{/if}
 			{#if modelHasTools}
 				{#each extraTools as tool}
@@ -328,7 +328,7 @@
 					</button>
 				{/each}
 			{/if}
-			{#if modelHasTools}
+			<!-- {#if modelHasTools}
 				<HoverTooltip
 					label="Browse more tools"
 					position="right"
@@ -342,7 +342,7 @@
 						<IconAdd class="text-sm" />
 					</a>
 				</HoverTooltip>
-			{/if}
+			{/if} -->
 		</div>
 	{/if}
 	{@render children?.()}
