@@ -362,7 +362,6 @@ export function endpointSupplementFlow(
 				},
 			});
 
-			console.log("responseVideoResponse", response.output_text);
 			// Parse the JSON response correctly
 			const parsedResponse = JSON.parse(response.output_text);
 			return parsedResponse; // Return the entire parsed array
@@ -488,13 +487,11 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 				if (toolCall.name === "getAllRecommendations") {
 					// Parse the function arguments
 					const functionArgs: HealthInformation = JSON.parse(toolCall.arguments);
-					// console.log("getAllRecommendations", functionArgs);
 
 					// Call the function
 					const result = await getAllRecommendations(functionArgs);
 
-					console.log("result", result);
-
+					// Add the tool call to the input
 					input.push(toolCall);
 
 					input.push({
@@ -506,8 +503,6 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 					toolUsed = true;
 				}
 
-				console.log("toolUsed", toolUsed);
-
 				if (toolUsed) {
 					// Send the function result back to the model
 					const finalResponse = await openai.responses.create({
@@ -516,111 +511,8 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 						tools,
 					});
 					response.output_text = finalResponse.output_text;
-
-					console.log("finalResponse", response.output_text);
 				}
 			}
-
-			// Step 1: Get supplement recommendations
-			// const supplementRecommendations = await getNutraceuticals(conversationHistory);
-
-			// if (supplementRecommendations.length === 0) {
-			// 	const noRecommendationsMessage =
-			// 		"I couldn't find any specific supplement recommendations based on the information provided. Could you please share more details about your health concerns?";
-
-			// 	return (async function* () {
-			// 		yield {
-			// 			token: {
-			// 				id: 0,
-			// 				text: noRecommendationsMessage,
-			// 				logprob: 0,
-			// 				special: false,
-			// 			},
-			// 			generated_text: null,
-			// 			details: null,
-			// 		} satisfies TextGenerationStreamOutput;
-
-			// 		yield {
-			// 			token: {
-			// 				id: 1,
-			// 				text: "",
-			// 				logprob: 0,
-			// 				special: true,
-			// 			},
-			// 			generated_text: noRecommendationsMessage,
-			// 			details: null,
-			// 		} satisfies TextGenerationStreamOutput;
-			// 	})();
-			// }
-
-			// // Arrays to store each type of recommendation
-			// let productRecommendationsArray: ProductRecommendation[] = [];
-			// const nutraceuticalRecommendationsArray = [...supplementRecommendations];
-			// let educationalVideosArray: EducationalVideo[] = [];
-
-			// // Step 2: Get educational videos and product recommendations for each supplement
-			// // We use Promise.all to run these requests in parallel
-			// await Promise.all(
-			// 	supplementRecommendations.map(async (supplement: NutraceuticalRecommendation) => {
-			// 		// Get videos for this supplement
-			// 		const videos = await getYoutubeVideos(supplement.nutraceutical_name);
-
-			// 		if (videos && videos.length > 0) {
-			// 			educationalVideosArray = educationalVideosArray.concat(videos);
-			// 		}
-
-			// 		// Get products for this supplement
-			// 		const products = await getProductsRecommendations(
-			// 			supplement.nutraceutical_name,
-			// 			supplement.user_gender
-			// 		);
-			// 		if (products && products.length > 0) {
-			// 			productRecommendationsArray = productRecommendationsArray.concat(products);
-			// 		}
-			// 	})
-			// );
-
-			// // Format the response with text headings and JSON arrays
-			// let formattedResponse = "";
-
-			// // Add product recommendations section
-			// if (productRecommendationsArray.length > 0) {
-			// 	formattedResponse += "Here are the recommended products for you:\n```json\n";
-			// 	formattedResponse += JSON.stringify(
-			// 		{ product_recommendations: productRecommendationsArray },
-			// 		null,
-			// 		2
-			// 	);
-			// 	formattedResponse += "\n```\n\n";
-			// }
-
-			// // Add nutraceutical recommendations section
-			// if (nutraceuticalRecommendationsArray.length > 0) {
-			// 	formattedResponse += "Here are the recommended nutraceuticals for you:\n```json\n";
-			// 	formattedResponse += JSON.stringify(
-			// 		{ nutraceutical_recommendations: nutraceuticalRecommendationsArray },
-			// 		null,
-			// 		2
-			// 	);
-			// 	formattedResponse += "\n```\n\n";
-			// }
-
-			// // Add educational videos section
-			// if (educationalVideosArray.length > 0) {
-			// 	formattedResponse += "Here are the recommended tutorials for you:\n```json\n";
-			// 	formattedResponse += JSON.stringify(
-			// 		{ educational_videos: educationalVideosArray },
-			// 		null,
-			// 		2
-			// 	);
-			// 	formattedResponse += "\n```\n\n";
-			// }
-
-			// // If no recommendations were found
-			// if (formattedResponse === "") {
-			// 	formattedResponse =
-			// 		"I couldn't find any specific recommendations based on the information provided. Could you please share more details about your health concerns?";
-			// }
 
 			// Return the stream generator function
 			return (async function* () {
@@ -711,10 +603,7 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 			nutraceuticalRecommendationsArray.map(async (supplement: NutraceuticalRecommendation) => {
 				// Get videos for this supplement
 				const video = await getYoutubeVideo(supplement.nutraceutical_name);
-
-				console.log("video", video);
 				if (video) {
-					video;
 					educationalVideosArray.push(video);
 				}
 
@@ -723,7 +612,6 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 					supplement.nutraceutical_name,
 					supplement.user_gender
 				);
-				console.log("product", product);
 				if (product) {
 					productRecommendationsArray.push(product);
 				}
