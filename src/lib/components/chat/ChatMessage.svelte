@@ -30,7 +30,7 @@
 	import OpenReasoningResults from "./OpenReasoningResults.svelte";
 	import Alternatives from "./Alternatives.svelte";
 	import Vote from "./Vote.svelte";
-	import YouTubeEmbed from './YouTubeEmbed.svelte';
+	// import YouTubeEmbed from './YouTubeEmbed.svelte';
 	import JsonTable from './JsonTable.svelte';
 	import ProductCards from './ProductCards.svelte';
 	import YouTubeCards from './YouTubeCards.svelte';
@@ -140,35 +140,35 @@
 	}
 
 	// Function to find YouTube links in text
-	function findYouTubeLinks(content: string): Array<{url: string, videoId: string, start: number, end: number}> {
-		const regex = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/g;
-		const matches = [];
-		let match;
+	// function findYouTubeLinks(content: string): Array<{url: string, videoId: string, start: number, end: number}> {
+	// 	const regex = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/g;
+	// 	const matches = [];
+	// 	let match;
 		
-		// Find all YouTube links with their positions
-		while ((match = regex.exec(content)) !== null) {
-			const url = match[0];
-			const videoId = getYouTubeVideoId(url);
-			if (videoId) {
-				matches.push({
-					url,
-					videoId,
-					start: match.index,
-					end: match.index + url.length
-				});
-			}
-		}
+	// 	// Find all YouTube links with their positions
+	// 	while ((match = regex.exec(content)) !== null) {
+	// 		const url = match[0];
+	// 		const videoId = getYouTubeVideoId(url);
+	// 		if (videoId) {
+	// 			matches.push({
+	// 				url,
+	// 				videoId,
+	// 				start: match.index,
+	// 				end: match.index + url.length
+	// 			});
+	// 		}
+	// 	}
 		
-		// Filter out duplicate video IDs
-		const seenVideoIds = new Set<string>();
-		return matches.filter(({videoId}) => {
-			if (seenVideoIds.has(videoId)) {
-				return false;
-			}
-			seenVideoIds.add(videoId);
-			return true;
-		});
-	}
+	// 	// Filter out duplicate video IDs
+	// 	const seenVideoIds = new Set<string>();
+	// 	return matches.filter(({videoId}) => {
+	// 		if (seenVideoIds.has(videoId)) {
+	// 			return false;
+	// 		}
+	// 		seenVideoIds.add(videoId);
+	// 		return true;
+	// 	});
+	// }
 
 	// Function to find JSON content in text
 	function findJsonContent(content: string): Array<{data: Record<string, any>, start: number, end: number, isProductRecommendation: boolean, isEducationalVideos: boolean, isNutraceuticalRecommendation: boolean}> {
@@ -294,7 +294,7 @@
 		
 		// First process JSON content
 		const jsonResults = findJsonContent(message.content);
-		const youtubeLinks = findYouTubeLinks(message.content);
+		// const youtubeLinks = findYouTubeLinks(message.content);
 		
 		// Sort all replacements in reverse order to process from end to start
 		// This prevents position shifts when making replacements
@@ -308,13 +308,13 @@
 			isNutraceuticalRecommendation: boolean;
 		};
 		
-		type YoutubeReplacement = {
-			type: 'youtube';
-			videoId: string;
-			url: string;
-			start: number;
-			end: number;
-		};
+		// type YoutubeReplacement = {
+		// 	type: 'youtube';
+		// 	videoId: string;
+		// 	url: string;
+		// 	start: number;
+		// 	end: number;
+		// };
 		
 		const allReplacements = [
 			...jsonResults.map(item => ({ type: 'json', ...item } as JsonReplacement)),
@@ -352,8 +352,6 @@
 			// 	});
 			// }
 		}
-
-		// console.log("newContent", newContent);
 		
 		processedContent = {
 			content: newContent,
@@ -432,7 +430,7 @@
 					class="prose max-w-none dark:prose-invert max-sm:prose-sm prose-headings:font-semibold prose-h1:text-lg prose-h2:text-base prose-h3:text-base prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900"
 				>
 					{#if message.content}
-						{#each processedContent.content.split(/(__JSON_TABLE_\d+__|__YOUTUBE_EMBED_\d+__)/) as part, i}
+						{#each processedContent.content.split(/(__JSON_TABLE_\d+__)/) as part, i}
 							{#if part.startsWith('__JSON_TABLE_')}
 								{@const index = parseInt(part.match(/\d+/)?.[0] ?? '-1')}
 								{#if index >= 0 && index < processedContent.jsonData.length}

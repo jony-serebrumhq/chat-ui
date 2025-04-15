@@ -1,6 +1,4 @@
 <script lang="ts">
-    import YouTubeEmbed from './YouTubeEmbed.svelte';
-
     interface EducationalVideo {
         nutraceutical_name: string;
         video_link: string;

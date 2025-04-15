@@ -338,51 +338,40 @@ export function endpointSupplementFlow(
 	}
 
 	// YouTube Video Search Agent
-	async function getYoutubeVideos(supplement: string): Promise<EducationalVideo[]> {
+	async function getYoutubeVideo(supplement: string): Promise<EducationalVideo> {
 		try {
 			const response = await openai.responses.create({
 				model: "gpt-4o",
 				tools: [{ type: "web_search_preview" }],
 				tool_choice: { type: "web_search_preview" },
-				input: [
-					{
-						role: "system",
-						content: `Use the web search tool and find an educational YouTube video about ${supplement}. Provide the nutraceutical name and video link in JSON format.`,
-					},
-				],
+				input: `Use the web_search_preview tool and find one suitable educational YouTube video about ${supplement}. Response strictly in JSON format.`,
 				text: {
 					format: {
-						name: "EducationalResponseFormat",
+						name: "NutraceuticalEducationalVideoResponseFormat",
 						type: "json_schema",
 						schema: {
 							type: "object",
 							additionalProperties: false,
 							properties: {
-								educational_videos: {
-									type: "array",
-									items: {
-										type: "object",
-										additionalProperties: false,
-										properties: {
-											nutraceutical_name: { type: "string" },
-											video_link: { type: "string" },
-										},
-										required: ["nutraceutical_name", "video_link"],
-									},
-								},
+								nutraceutical_name: { type: "string" },
+								video_link: { type: "string" },
 							},
-							required: ["educational_videos"],
+							required: ["nutraceutical_name", "video_link"],
 						},
 					},
 				},
 			});
 
+			console.log("responseVideoResponse", response.output_text);
 			// Parse the JSON response correctly
 			const parsedResponse = JSON.parse(response.output_text);
-			return parsedResponse.educational_videos; // Return the entire parsed array
+			return parsedResponse; // Return the entire parsed array
 		} catch (error) {
 			console.error("Error in YouTube video search:", error);
-			return [];
+			return {
+				nutraceutical_name: "",
+				video_link: "",
+			};
 		}
 	}
 
@@ -390,7 +379,7 @@ export function endpointSupplementFlow(
 	async function getProductsRecommendations(
 		supplement: string,
 		gender: string
-	): Promise<ProductRecommendation[]> {
+	): Promise<ProductRecommendation> {
 		try {
 			const response = await openai.responses.create({
 				model: "gpt-4o",
@@ -403,7 +392,7 @@ export function endpointSupplementFlow(
 				input: [
 					{
 						role: "system",
-						content: `You are a Product Consultant with access to a product catalog. Recommend a product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Include product name, image URL, description, and price. Respond strictly in JSON format.`,
+						content: `You are a Product Consultant with access to a product catalog. Recommend one suitable product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Respond strictly in JSON format.`,
 					},
 				],
 				text: {
@@ -414,23 +403,13 @@ export function endpointSupplementFlow(
 							type: "object",
 							additionalProperties: false,
 							properties: {
-								product_recommendations: {
-									type: "array",
-									items: {
-										type: "object",
-										additionalProperties: false,
-										properties: {
-											product_name: { type: "string" },
-											image: { type: "string" },
-											description: { type: "string" },
-											price: { type: "string" },
-											product_link: { type: "string" },
-										},
-										required: ["product_name", "image", "description", "price", "product_link"],
-									},
-								},
+								product_name: { type: "string", description: "The name of the product" },
+								image: { type: "string", description: "The image URL of the product" },
+								description: { type: "string", description: "The description of the product" },
+								price: { type: "string", description: "The price of the product" },
+								product_link: { type: "string", description: "The link to the product" },
 							},
-							required: ["product_recommendations"],
+							required: ["product_name", "image", "description", "price", "product_link"],
 						},
 					},
 				},
@@ -438,10 +417,16 @@ export function endpointSupplementFlow(
 
 			// Parse the JSON response correctly
 			const parsedResponse = JSON.parse(response.output_text);
-			return parsedResponse.product_recommendations; // Return the entire parsed array
+			return parsedResponse; // Return the entire parsed array
 		} catch (error) {
 			console.error("Error in product consultant:", error);
-			return [];
+			return {
+				product_name: "",
+				image: "",
+				description: "",
+				price: "",
+				product_link: "",
+			};
 		}
 	}
 
@@ -508,7 +493,7 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 					// Call the function
 					const result = await getAllRecommendations(functionArgs);
 
-					// console.log("result", result);
+					console.log("result", result);
 
 					input.push(toolCall);
 
@@ -531,6 +516,8 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 						tools,
 					});
 					response.output_text = finalResponse.output_text;
+
+					console.log("finalResponse", response.output_text);
 				}
 			}
 
@@ -715,30 +702,56 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 		// // Arrays to store each type of recommendation
 		const nutraceuticalRecommendationsArray = await getNutraceuticals(healthInfo);
 
-		let productRecommendationsArray: ProductRecommendation[] = [];
-		let educationalVideosArray: EducationalVideo[] = [];
+		const productRecommendationsArray: ProductRecommendation[] = [];
+		const educationalVideosArray: EducationalVideo[] = [];
 
 		// Step 2: Get educational videos and product recommendations for each supplement
 		// We use Promise.all to run these requests in parallel
 		await Promise.all(
 			nutraceuticalRecommendationsArray.map(async (supplement: NutraceuticalRecommendation) => {
 				// Get videos for this supplement
-				const videos = await getYoutubeVideos(supplement.nutraceutical_name);
+				const video = await getYoutubeVideo(supplement.nutraceutical_name);
 
-				if (videos && videos.length > 0) {
-					educationalVideosArray = educationalVideosArray.concat(videos);
+				console.log("video", video);
+				if (video) {
+					video;
+					educationalVideosArray.push(video);
 				}
 
 				// Get products for this supplement
-				const products = await getProductsRecommendations(
+				const product = await getProductsRecommendations(
 					supplement.nutraceutical_name,
 					supplement.user_gender
 				);
-				if (products && products.length > 0) {
-					productRecommendationsArray = productRecommendationsArray.concat(products);
+				console.log("product", product);
+				if (product) {
+					productRecommendationsArray.push(product);
 				}
 			})
 		);
+
+		// educationalVideosArray.push(
+		// 	{
+		// 	  nutraceutical_name: "2025 NBA Playoffs Schedule",
+		// 	  video_link: "https://www.youtube.com/watch?v=cF5iP-P67fg"
+		// 	},
+		// 	{
+		// 	  nutraceutical_name: "2025 NBA Playoffs",
+		// 	  video_link: "https://www.youtube.com/watch?v=cF5iP-P67fg"
+		// 	},
+		// 	{
+		// 	  nutraceutical_name: "2025 NBA Playoffs Schedule",
+		// 	  video_link: "https://www.youtube.com/watch?v=cF5iP-P67fg"
+		// 	},
+		// 	{
+		// 	  nutraceutical_name: "2025 NBA Playoffs",
+		// 	  video_link: "https://www.youtube.com/watch?v=cF5iP-P67fg"
+		// 	},
+		// 	{
+		// 	  nutraceutical_name: "2025 NBA Playoffs Schedule",
+		// 	  video_link: "https://www.youtube.com/watch?v=cF5iP-P67fg"
+		// 	}
+		// );
 
 		// Format the response with text headings and JSON arrays
 		let formattedResponse = "";
