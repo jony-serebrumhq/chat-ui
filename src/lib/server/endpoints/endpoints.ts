@@ -35,6 +35,10 @@ import {
 	endpointSupplementFlow,
 	endpointSupplementFlowParametersSchema,
 } from "./custom/supplementFlowCustom";
+import {
+	endpointSupplementVectorSearch,
+	endpointSupplementVectorSearchParametersSchema,
+} from "./custom/supplementVectorSearch";
 
 export type EndpointMessage = Omit<Message, "id">;
 
@@ -82,6 +86,7 @@ export const endpoints = {
 	langserve: endpointLangserve,
 	custom: endpointCustom,
 	supplementFlow: endpointSupplementFlow,
+	supplementVectorSearch: endpointSupplementVectorSearch,
 };
 
 export const endpointSchema = z.discriminatedUnion("type", [
@@ -100,5 +105,6 @@ export const endpointSchema = z.discriminatedUnion("type", [
 	endpointLangserveParametersSchema,
 	endpointCustomParametersSchema,
 	endpointSupplementFlowParametersSchema,
+	endpointSupplementVectorSearchParametersSchema,
 ]);
 export default endpoints;

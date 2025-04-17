@@ -13,6 +13,8 @@
 	import InfiniteScroll from "./InfiniteScroll.svelte";
 	import type { Conversation } from "$lib/types/Conversation";
 	import { CONV_NUM_PER_PAGE } from "$lib/constants/pagination";
+	import { useSettingsStore } from "$lib/stores/settings";
+	import SupplementForm from "./SupplementForm.svelte";
 
 	interface Props {
 		conversations: ConvSidebar[];
@@ -55,6 +57,9 @@
 
 	const nModels: number = $page.data.models.filter((el: Model) => !el.unlisted).length;
 
+	const RESEARCH_MODEL_NAME = "Supplement Vector Search";
+	const settings = useSettingsStore();
+
 	async function handleVisible() {
 		p++;
 		const newConvs = await fetch(`${base}/api/conversations?p=${p}`)
@@ -85,56 +90,87 @@
 	});
 </script>
 
-<div class="sticky top-0 flex flex-none items-center justify-between px-1.5 py-3.5 max-sm:pt-0">
-	<a
-		class="flex items-center rounded-xl text-lg font-semibold"
-		href="{envPublic.PUBLIC_ORIGIN}{base}/"
-	>
-		<Logo classNames="mr-1" />
-		{envPublic.PUBLIC_APP_NAME}
-	</a>
-	{#if $page.url.pathname !== base + "/"}
+<style>
+	/* Add custom scrollbar styling */
+	.custom-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-thumb {
+		background-color: rgba(156, 163, 175, 0.5);
+		border-radius: 3px;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(156, 163, 175, 0.7);
+	}
+</style>
+
+{#if $settings.activeModel === RESEARCH_MODEL_NAME}
+	<div class="flex-grow flex-shrink h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+		<SupplementForm on:message={(event) => {}} />
+	</div>
+{:else}
+	<div class="sticky top-0 flex flex-none items-center justify-between px-1.5 py-3.5 max-sm:pt-0">
 		<a
-			href={`${base}/`}
-			onclick={handleNewChatClick}
-			class="flex rounded-lg border bg-white px-2 py-0.5 text-center shadow-sm hover:shadow-none dark:border-gray-600 dark:bg-gray-700 sm:text-smd"
+			class="flex items-center rounded-xl text-lg font-semibold"
+			href="{envPublic.PUBLIC_ORIGIN}{base}/"
 		>
-			New Chat
+			<Logo classNames="mr-1" />
+			{envPublic.PUBLIC_APP_NAME}
 		</a>
-	{/if}
-</div>
-<div
-	class="scrollbar-custom flex flex-col gap-1 overflow-y-auto rounded-r-xl from-gray-50 px-3 pb-3 pt-2 text-[.9rem] dark:from-gray-800/30 max-sm:bg-gradient-to-t md:bg-gradient-to-l"
->
-	{#await groupedConversations}
-		{#if $page.data.nConversations > 0}
-			<div class="overflow-y-hidden">
-				<div class="flex animate-pulse flex-col gap-4">
-					<div class="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700"></div>
-					{#each Array(100) as _}
-						<div class="ml-2 h-5 w-4/5 gap-5 rounded bg-gray-200 dark:bg-gray-700"></div>
-					{/each}
+		{#if $page.url.pathname !== base + "/"}
+			<a
+				href={`${base}/`}
+				onclick={handleNewChatClick}
+				class="flex rounded-lg border bg-white px-2 py-0.5 text-center shadow-sm hover:shadow-none dark:border-gray-600 dark:bg-gray-700 sm:text-smd"
+			>
+				New Chat
+			</a>
+		{/if}
+	</div>
+	<div
+		class="scrollbar-custom flex flex-col gap-1 overflow-y-auto rounded-r-xl from-gray-50 px-3 pb-3 pt-2 text-[.9rem] dark:from-gray-800/30 max-sm:bg-gradient-to-t md:bg-gradient-to-l"
+	>
+		{#await groupedConversations}
+			{#if $page.data.nConversations > 0}
+				<div class="overflow-y-hidden">
+					<div class="flex animate-pulse flex-col gap-4">
+						<div class="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700"></div>
+						{#each Array(100) as _}
+							<div class="ml-2 h-5 w-4/5 gap-5 rounded bg-gray-200 dark:bg-gray-700"></div>
+						{/each}
+					</div>
 				</div>
+			{/if}
+		{:then groupedConversations}
+			<div class="flex flex-col gap-1">
+				{#each Object.entries(groupedConversations) as [group, convs]}
+					{#if convs.length}
+						<h4 class="mb-1.5 mt-4 pl-0.5 text-sm text-gray-400 first:mt-0 dark:text-gray-500">
+							{titles[group]}
+						</h4>
+						{#each convs as conv}
+							<NavConversationItem on:editConversationTitle on:deleteConversation {conv} />
+						{/each}
+					{/if}
+				{/each}
 			</div>
-		{/if}
-	{:then groupedConversations}
-		<div class="flex flex-col gap-1">
-			{#each Object.entries(groupedConversations) as [group, convs]}
-				{#if convs.length}
-					<h4 class="mb-1.5 mt-4 pl-0.5 text-sm text-gray-400 first:mt-0 dark:text-gray-500">
-						{titles[group]}
-					</h4>
-					{#each convs as conv}
-						<NavConversationItem on:editConversationTitle on:deleteConversation {conv} />
-					{/each}
-				{/if}
-			{/each}
-		</div>
-		{#if hasMore}
-			<InfiniteScroll on:visible={handleVisible} />
-		{/if}
-	{/await}
-</div>
+			{#if hasMore}
+				<InfiniteScroll on:visible={handleVisible} />
+			{/if}
+		{/await}
+	</div>
+{/if}
 <div
 	class="mt-0.5 flex flex-col gap-1 rounded-r-xl p-3 text-sm md:bg-gradient-to-l md:from-gray-50 md:dark:from-gray-800/30"
 >
@@ -208,12 +244,12 @@
 		</a>
 	{/if}
 
-	<a
+	<!-- <a
 		href="{base}/settings"
 		class="flex h-9 flex-none items-center gap-1.5 rounded-lg pl-2.5 pr-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
 	>
 		Settings
-	</a>
+	</a> -->
 	{#if envPublic.PUBLIC_APP_NAME === "HuggingChat"}
 		<a
 			href="{base}/privacy"

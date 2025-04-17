@@ -333,6 +333,8 @@ const addEndpoint = (m: Awaited<ReturnType<typeof processModel>>) => ({
 						return endpoints.custom(args);
 					case "supplementFlow":
 						return endpoints.supplementFlow(args);
+					case "supplementVectorSearch":
+						return endpoints.supplementVectorSearch(args);
 					default:
 						// for legacy reason
 						return endpoints.tgi(args);
