@@ -32,6 +32,7 @@
 	import UploadedFile from "./UploadedFile.svelte";
 	import { useSettingsStore } from "$lib/stores/settings";
 	import ModelSwitch from "./ModelSwitch.svelte";
+	import TopChatInput from "./TopChatInput.svelte";
 
 	import { fly } from "svelte/transition";
 	import { cubicInOut } from "svelte/easing";
@@ -234,6 +235,9 @@
 		)
 	);
 	let isFileUploadEnabled = $derived(activeMimeTypes.length > 0);
+
+	// Add a derived state for checking if current model is the research model
+	let isResearchModel = $derived(currentModel.id === "Supplement Vector Search");
 </script>
 
 <svelte:window
@@ -250,6 +254,16 @@
 />
 
 <div class="relative min-h-0 min-w-0">
+	{#if isResearchModel}
+		<TopChatInput 
+			bind:value={message} 
+			loading={loading} 
+			disabled={isReadOnly || lastIsError}
+			onPaste={onPaste}
+			on:submit={handleSubmit}
+		/>
+	{/if}
+	
 	<div
 		class="scrollbar-custom h-full overflow-y-auto"
 		use:snapScrollToBottom={messages.length ? [...messages] : false}
@@ -404,80 +418,82 @@
 					</div>
 				{/if}
 			</div>
-			<form
-				tabindex="-1"
-				aria-label={isFileUploadEnabled ? "file dropzone" : undefined}
-				onsubmit={(e) => {
-					e.preventDefault();
-					handleSubmit();
-				}}
-				class="relative flex w-full max-w-4xl flex-1 items-center rounded-xl border bg-gray-100 dark:border-gray-600 dark:bg-gray-700
-            {isReadOnly ? 'opacity-30' : ''}"
-			>
-				{#if onDrag && isFileUploadEnabled}
-					<FileDropzone bind:files bind:onDrag mimeTypes={activeMimeTypes} />
-				{:else}
-					<div
-						class="flex w-full flex-1 rounded-xl border-none bg-transparent"
-						class:paste-glow={pastedLongContent}
-					>
-						{#if lastIsError}
-							<ChatInput value="Sorry, something went wrong. Please try again." disabled={true} />
-						{:else}
-							<ChatInput
-								{assistant}
-								placeholder={isReadOnly ? "This conversation is read-only." : "Ask anything"}
-								{loading}
-								bind:value={message}
-								bind:files
-								mimeTypes={activeMimeTypes}
-								on:submit={handleSubmit}
-								{onPaste}
-								disabled={isReadOnly || lastIsError}
-								modelHasTools={currentModel.tools}
-								modelIsMultimodal={currentModel.multimodal}
-							/>
-						{/if}
+			{#if !isResearchModel}
+				<form
+					tabindex="-1"
+					aria-label={isFileUploadEnabled ? "file dropzone" : undefined}
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleSubmit();
+					}}
+					class="relative flex w-full max-w-4xl flex-1 items-center rounded-xl border bg-gray-100 dark:border-gray-600 dark:bg-gray-700
+				{isReadOnly ? 'opacity-30' : ''}"
+				>
+					{#if onDrag && isFileUploadEnabled}
+						<FileDropzone bind:files bind:onDrag mimeTypes={activeMimeTypes} />
+					{:else}
+						<div
+							class="flex w-full flex-1 rounded-xl border-none bg-transparent"
+							class:paste-glow={pastedLongContent}
+						>
+							{#if lastIsError}
+								<ChatInput value="Sorry, something went wrong. Please try again." disabled={true} />
+							{:else}
+								<ChatInput
+									{assistant}
+									placeholder={isReadOnly ? "This conversation is read-only." : "Ask anything"}
+									{loading}
+									bind:value={message}
+									bind:files
+									mimeTypes={activeMimeTypes}
+									on:submit={handleSubmit}
+									{onPaste}
+									disabled={isReadOnly || lastIsError}
+									modelHasTools={currentModel.tools}
+									modelIsMultimodal={currentModel.multimodal}
+								/>
+							{/if}
 
-						{#if loading}
-							<button
-								disabled
-								class="btn absolute bottom-1 right-0.5 size-10 self-end rounded-lg bg-transparent text-gray-400"
-							>
-								<EosIconsLoading />
-							</button>
-						{:else}
-							<button
-								class="btn absolute bottom-2 right-2 size-7 self-end rounded-full border bg-white text-black shadow transition-none enabled:hover:bg-white enabled:hover:shadow-inner disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:hover:enabled:bg-black"
-								disabled={!message || isReadOnly}
-								type="submit"
-								aria-label="Send message"
-								name="submit"
-							>
-								<svg
-									width="1em"
-									height="1em"
-									viewBox="0 0 32 32"
-									fill="none"
-									xmlns="http://www.w3.org/2000/svg"
+							{#if loading}
+								<button
+									disabled
+									class="btn absolute bottom-1 right-0.5 size-10 self-end rounded-lg bg-transparent text-gray-400"
 								>
-									<path
-										fill-rule="evenodd"
-										clip-rule="evenodd"
-										d="M17.0606 4.23197C16.4748 3.64618 15.525 3.64618 14.9393 4.23197L5.68412 13.4871C5.09833 14.0729 5.09833 15.0226 5.68412 15.6084C6.2699 16.1942 7.21965 16.1942 7.80544 15.6084L14.4999 8.91395V26.7074C14.4999 27.5359 15.1715 28.2074 15.9999 28.2074C16.8283 28.2074 17.4999 27.5359 17.4999 26.7074V8.91395L24.1944 15.6084C24.7802 16.1942 25.7299 16.1942 26.3157 15.6084C26.9015 15.0226 26.9015 14.0729 26.3157 13.4871L17.0606 4.23197Z"
-										fill="currentColor"
-									/>
-								</svg>
-							</button>
-						{/if}
-					</div>
-				{/if}
-			</form>
+									<EosIconsLoading />
+								</button>
+							{:else}
+								<button
+									class="btn absolute bottom-2 right-2 size-7 self-end rounded-full border bg-white text-black shadow transition-none enabled:hover:bg-white enabled:hover:shadow-inner disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:hover:enabled:bg-black"
+									disabled={!message || isReadOnly}
+									type="submit"
+									aria-label="Send message"
+									name="submit"
+								>
+									<svg
+										width="1em"
+										height="1em"
+										viewBox="0 0 32 32"
+										fill="none"
+										xmlns="http://www.w3.org/2000/svg"
+									>
+										<path
+											fill-rule="evenodd"
+											clip-rule="evenodd"
+											d="M17.0606 4.23197C16.4748 3.64618 15.525 3.64618 14.9393 4.23197L5.68412 13.4871C5.09833 14.0729 5.09833 15.0226 5.68412 15.6084C6.2699 16.1942 7.21965 16.1942 7.80544 15.6084L14.4999 8.91395V26.7074C14.4999 27.5359 15.1715 28.2074 15.9999 28.2074C16.8283 28.2074 17.4999 27.5359 17.4999 26.7074V8.91395L24.1944 15.6084C24.7802 16.1942 25.7299 16.1942 26.3157 15.6084C26.9015 15.0226 26.9015 14.0729 26.3157 13.4871L17.0606 4.23197Z"
+											fill="currentColor"
+										/>
+									</svg>
+								</button>
+							{/if}
+						</div>
+					{/if}
+				</form>
+			{/if}
 			<div
 				class="mt-2 flex justify-between self-stretch px-1 text-xs text-gray-400/90 max-md:mb-2 max-sm:gap-2"
 			>
 				<p>
-					Model:
+					<!-- Model:
 					{#if !assistant}
 						{#if models.find((m) => m.id === currentModel.id)}
 							<a
@@ -503,9 +519,8 @@
 								{currentModel.id}
 							</span>
 						{/if}
-					{/if}
-					<span class="max-sm:hidden">·</span><br class="sm:hidden" /> Generated content may be inaccurate
-					or false.
+					{/if} -->
+					<span class="max-sm:hidden">·</span><br class="sm:hidden" /> Generated content may be inaccurate.
 				</p>
 				{#if messages.length}
 					<button

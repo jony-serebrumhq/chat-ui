@@ -33,8 +33,10 @@
 	// import YouTubeEmbed from './YouTubeEmbed.svelte';
 	import JsonTable from './JsonTable.svelte';
 	import ProductCards from './ProductCards.svelte';
+	import VerticalProductCards from './VerticalProductCards.svelte';
 	import YouTubeCards from './YouTubeCards.svelte';
 	import NutraceuticalCards from './NutraceuticalCards.svelte';
+	import { useSettingsStore } from "$lib/stores/settings";
 
 	interface Props {
 		message: Message;
@@ -359,6 +361,15 @@
 			// youtubeEmbeds: youtubeWithPositions
 		};
 	});
+
+	// Add settings store
+	const settings = useSettingsStore();
+	
+	// Define constant for the Supplement Vector Search model
+	const RESEARCH_MODEL_NAME = "Supplement Vector Search";
+	
+	// Check if the current model is the research model
+	let isResearchModel = $derived($settings.activeModel === RESEARCH_MODEL_NAME);
 </script>
 
 {#if message.from === "assistant"}
@@ -436,7 +447,11 @@
 								{#if index >= 0 && index < processedContent.jsonData.length}
 									<div class="my-4">
 										{#if processedContent.jsonData[index].isProductRecommendation}
-											<ProductCards products={processedContent.jsonData[index].data.product_recommendations} />
+											{#if isResearchModel}
+												<VerticalProductCards products={processedContent.jsonData[index].data.product_recommendations} />
+											{:else}
+												<ProductCards products={processedContent.jsonData[index].data.product_recommendations} />
+											{/if}
 										{:else if processedContent.jsonData[index].isEducationalVideos}
 											<YouTubeCards videos={processedContent.jsonData[index].data.educational_videos} />
 										{:else if processedContent.jsonData[index].isNutraceuticalRecommendation}
