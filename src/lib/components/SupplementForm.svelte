@@ -1,6 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { useSettingsStore } from "$lib/stores/settings";
+    import { chatInputContent } from "$lib/stores/chatInput";
+    import { tick } from "svelte";
     
     const settings = useSettingsStore();
     
@@ -197,7 +199,7 @@
         const symptomsStr = symptoms.includes('None') ? 'None' : symptoms.join(', ');
         const exerciseTypesStr = exerciseTypes.includes('None') ? 'None' : exerciseTypes.join(', ');
 
-        return `Based on my profile below, please recommend supplements, products and educational vidoes and that might be beneficial:
+        return `Based on my profile below, recommend me supplements that might be beneficial:
 
 Primary Health Goal: ${primaryHealthGoal}
 Secondary Health Goal: ${secondaryHealthGoal}
@@ -215,10 +217,28 @@ ${additionalInfo || 'None'}
 `;
     }
 
-    function handleSubmit(e: Event) {
-        e.preventDefault();
-        dispatch("message", generatePrompt());
-    }
+    const handleSubmit = async (e: Event) => {
+        // Stop the event from propagating
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Set the prompt content to the chatInputContent store
+        const prompt = generatePrompt();
+        chatInputContent.set(prompt);
+        
+        // Wait for the DOM to update
+        await tick();
+        
+        // Find the chat input form and submit it
+        const chatForm = document.querySelector('form[aria-label="file dropzone"]');
+        if (chatForm) {
+            // Create and dispatch a submit event
+            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+            chatForm.dispatchEvent(submitEvent);
+        }
+    };
 </script>
 
 <style>
@@ -281,7 +301,12 @@ ${additionalInfo || 'None'}
         </div>
 
         <form 
-            on:submit={handleSubmit} 
+            onsubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSubmit();
+                return false;
+            }} 
             class="flex flex-1 flex-col gap-4 overflow-y-auto custom-scrollbar p-4 pt-0"
         >
             <!-- Section 1: Health Goals -->
@@ -289,7 +314,7 @@ ${additionalInfo || 'None'}
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('healthGoals')}
+                    onclick={() => toggleSection('healthGoals')}
                 >
                     <span class="font-medium">Health Goals</span>
                     <span class="chevron transform {openSections.healthGoals ? 'rotate-180' : ''}">▼</span>
@@ -333,7 +358,7 @@ ${additionalInfo || 'None'}
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('generalInfo')}
+                    onclick={() => toggleSection('generalInfo')}
                 >
                     <span class="font-medium">General Information</span>
                     <span class="chevron transform {openSections.generalInfo ? 'rotate-180' : ''}">▼</span>
@@ -421,7 +446,7 @@ ${additionalInfo || 'None'}
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('medicalConditions')}
+                    onclick={() => toggleSection('medicalConditions')}
                 >
                     <span class="font-medium">Medical and Health Conditions</span>
                     <span class="chevron transform {openSections.medicalConditions ? 'rotate-180' : ''}">▼</span>
@@ -439,7 +464,7 @@ ${additionalInfo || 'None'}
                                                 type="checkbox" 
                                                 value={option}
                                                 checked={healthConditions.includes(option)}
-                                                on:change={() => healthConditions = handleCheckboxChange(option, healthConditions)}
+                                                onchange={() => healthConditions = handleCheckboxChange(option, healthConditions)}
                                                 class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-500"
                                             />
                                             <span class="text-sm">{option}</span>
@@ -457,7 +482,7 @@ ${additionalInfo || 'None'}
                                                 type="checkbox" 
                                                 value={option}
                                                 checked={symptoms.includes(option)}
-                                                on:change={() => symptoms = handleCheckboxChange(option, symptoms)}
+                                                onchange={() => symptoms = handleCheckboxChange(option, symptoms)}
                                                 class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-500"
                                             />
                                             <span class="text-sm">{option}</span>
@@ -475,7 +500,7 @@ ${additionalInfo || 'None'}
                                                 type="checkbox" 
                                                 value={option}
                                                 checked={allergiesIntolerances.includes(option)}
-                                                on:change={() => allergiesIntolerances = handleCheckboxChange(option, allergiesIntolerances)}
+                                                onchange={() => allergiesIntolerances = handleCheckboxChange(option, allergiesIntolerances)}
                                                 class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-500"
                                             />
                                             <span class="text-sm">{option}</span>
@@ -649,10 +674,16 @@ ${additionalInfo || 'None'}
             </div>
 
             <button
-                type="submit"
+                type="button"
                 class="mt-4 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                onclick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSubmit();
+                    return false;
+                }}
             >
-                Get Supplement Recommendations
+                Submit
             </button>
         </form>
     </div>
