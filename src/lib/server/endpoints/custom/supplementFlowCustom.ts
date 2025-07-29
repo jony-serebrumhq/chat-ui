@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { Endpoint } from "../endpoints";
 import type { TextGenerationStreamOutput } from "@huggingface/inference";
 import { OpenAI } from "openai";
+import { collections } from "$lib/server/database";
+import { searchYouTubeVideoId } from "$lib/server/tools/web/youtubeSearch";
 
 export const endpointSupplementFlowParametersSchema = z.object({
 	type: z.literal("supplementFlow"),
@@ -38,7 +40,8 @@ interface NutraceuticalRecommendation {
 	benefits: string;
 	interactions_with_users_medications: string;
 	best_time_to_take: string;
-	user_gender: string;
+	popular_abbreviation: string[];
+	user_gender_preference: string;
 }
 
 interface EducationalVideo {
@@ -57,7 +60,7 @@ interface ProductRecommendation {
 export function endpointSupplementFlow(
 	input: z.input<typeof endpointSupplementFlowParametersSchema>
 ): Endpoint {
-	const { openaiApiKey, vectorStoreId } = endpointSupplementFlowParametersSchema.parse(input);
+	const { openaiApiKey } = endpointSupplementFlowParametersSchema.parse(input);
 
 	// Initialize OpenAI client
 	const openai = new OpenAI({
@@ -68,7 +71,7 @@ export function endpointSupplementFlow(
 		{
 			type: "function",
 			name: "getAllRecommendations",
-			description: "Provides nutraceuticals and products recommendations based on user's input.",
+			description: "Provides nutraceuticals recommendations based on user's input.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -299,15 +302,26 @@ export function endpointSupplementFlow(
 											benefits: { type: "string" },
 											interactions_with_users_medications: { type: "string" },
 											best_time_to_take: { type: "string" },
-											user_gender: { type: "string" },
+											popular_abbreviation: {
+												type: "array",
+												items: { type: "string" },
+												description:
+													"list of 3 most commonly used alternate names for this supplement (as referred to by consumers, manufacturers, or in online listings)",
+											},
+											user_gender_preference: {
+												type: "string",
+												enum: ["All", "Kids", "Men", "Women"],
+												description: "The user's gender preference for the supplement",
+											},
 										},
 										required: [
 											"nutraceutical_name",
 											"reason_for_recommendation",
 											"benefits",
 											"interactions_with_users_medications",
+											"popular_abbreviation",
 											"best_time_to_take",
-											"user_gender",
+											"user_gender_preference",
 										],
 									},
 								},
@@ -317,6 +331,7 @@ export function endpointSupplementFlow(
 					},
 				},
 			});
+			console.log("end getNutraceuticals", Date.now());
 			// Parse the JSON response correctly
 			const parsedResponse = JSON.parse(response.output_text);
 			return parsedResponse.nutraceutical_recommendations; // Return the entire parsed array
@@ -327,94 +342,148 @@ export function endpointSupplementFlow(
 	}
 
 	// YouTube Video Search Agent
-	// async function getYoutubeVideo(supplement: string): Promise<EducationalVideo> {
+	async function getYoutubeVideo(supplement: string): Promise<EducationalVideo> {
+		try {
+			const youtubeVideoSearchStartTime = Date.now();
+
+			const youtubeVideoId = await searchYouTubeVideoId(supplement);
+			const educationalVideo: EducationalVideo = {
+				nutraceutical_name: supplement,
+				video_link: youtubeVideoId || "",
+			};
+
+			const youtubeVideoSearchEndTime = Date.now();
+			console.log(
+				"YouTube video search time taken:",
+				(youtubeVideoSearchEndTime - youtubeVideoSearchStartTime) / 1000,
+				"seconds"
+			);
+
+			if (youtubeVideoId) {
+				return educationalVideo;
+			} else {
+				return {
+					nutraceutical_name: "",
+					video_link: "",
+				};
+			}
+		} catch (error) {
+			console.error("Error in YouTube video search:", error);
+			return {
+				nutraceutical_name: "",
+				video_link: "",
+			};
+		}
+	}
+
+	// Product Consultant Agent
+	// async function getProductsRecommendations(
+	// 	supplement: string,
+	// 	gender: string
+	// ): Promise<ProductRecommendation> {
 	// 	try {
+	// 		console.log("start getProductsRecommendations",Date.now());
 	// 		const response = await openai.responses.create({
 	// 			model: "gpt-4o",
-	// 			tools: [{ type: "web_search_preview" }],
-	// 			tool_choice: { type: "web_search_preview" },
-	// 			input: `Use the web_search_preview tool and find one suitable educational YouTube video about ${supplement}. Response strictly in JSON format.`,
+	// 			tools: [
+	// 				{
+	// 					type: "file_search",
+	// 					vector_store_ids: [vectorStoreId],
+	// 				},
+	// 			],
+	// 			input: [
+	// 				{
+	// 					role: "system",
+	// 					content: `You are a Product Consultant with access to a product catalog. Recommend one suitable product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Respond strictly in JSON format.`,
+	// 				},
+	// 			],
 	// 			text: {
 	// 				format: {
-	// 					name: "NutraceuticalEducationalVideoResponseFormat",
+	// 					name: "ProductResponseFormat",
 	// 					type: "json_schema",
 	// 					schema: {
 	// 						type: "object",
 	// 						additionalProperties: false,
 	// 						properties: {
-	// 							nutraceutical_name: { type: "string" },
-	// 							video_link: { type: "string" },
+	// 							product_name: { type: "string", description: "The name of the product" },
+	// 							image: { type: "string", description: "The image URL of the product" },
+	// 							description: { type: "string", description: "The description of the product" },
+	// 							price: { type: "string", description: "The price of the product" },
+	// 							product_link: { type: "string", description: "The link to the product" },
 	// 						},
-	// 						required: ["nutraceutical_name", "video_link"],
+	// 						required: ["product_name", "image", "description", "price", "product_link"],
 	// 					},
 	// 				},
 	// 			},
 	// 		});
-
+	// 		console.log("end getProductsRecommendations",Date.now());
 	// 		// Parse the JSON response correctly
 	// 		const parsedResponse = JSON.parse(response.output_text);
 	// 		return parsedResponse; // Return the entire parsed array
 	// 	} catch (error) {
-	// 		console.error("Error in YouTube video search:", error);
+	// 		console.error("Error in product consultant:", error);
 	// 		return {
-	// 			nutraceutical_name: "",
-	// 			video_link: "",
+	// 			product_name: "",
+	// 			image: "",
+	// 			description: "",
+	// 			price: "",
+	// 			product_link: "",
 	// 		};
 	// 	}
 	// }
 
 	// Product Consultant Agent
-	async function getProductsRecommendations(
+	async function getProductsRecommendationsFromDatabase(
 		supplement: string,
-		gender: string
-	): Promise<ProductRecommendation> {
+		gender: string,
+		popular_abbreviation: string[]
+	): Promise<ProductRecommendation | null> {
 		try {
-			const response = await openai.responses.create({
-				model: "gpt-4o",
-				tools: [
-					{
-						type: "file_search",
-						vector_store_ids: [vectorStoreId],
-					},
-				],
-				input: [
-					{
-						role: "system",
-						content: `You are a Product Consultant with access to a product catalog. Recommend one suitable product that matches the nutraceutical supplement ${supplement} and is appropriate for the gender ${gender}. Respond strictly in JSON format.`,
-					},
-				],
-				text: {
-					format: {
-						name: "ProductResponseFormat",
-						type: "json_schema",
-						schema: {
-							type: "object",
-							additionalProperties: false,
-							properties: {
-								product_name: { type: "string", description: "The name of the product" },
-								image: { type: "string", description: "The image URL of the product" },
-								description: { type: "string", description: "The description of the product" },
-								price: { type: "string", description: "The price of the product" },
-								product_link: { type: "string", description: "The link to the product" },
-							},
-							required: ["product_name", "image", "description", "price", "product_link"],
-						},
-					},
-				},
-			});
+			// if gender is not All, then filter by All or the gender
+			let product = null;
+			if (gender !== "All") {
+				product = await collections.products.findOne({
+					normalized_product_name: { $regex: new RegExp(supplement) },
+					$or: [{ gender }, { gender: "All" }],
+				});
 
-			// Parse the JSON response correctly
-			const parsedResponse = JSON.parse(response.output_text);
-			return parsedResponse; // Return the entire parsed array
+				if (!product) {
+					product = await collections.products.findOne({
+						$or: popular_abbreviation.map((abbreviation) => ({
+							normalized_product_name: { $regex: new RegExp(abbreviation) },
+							$or: [{ gender }, { gender: "All" }],
+						})),
+					});
+				}
+			} else {
+				product = await collections.products.findOne({
+					normalized_product_name: { $regex: new RegExp(supplement) },
+				});
+
+				if (!product) {
+					product = await collections.products.findOne({
+						$or: popular_abbreviation.map((abbreviation) => ({
+							normalized_product_name: { $regex: new RegExp(abbreviation) },
+						})),
+					});
+				}
+			}
+
+			// if product is found, return the product
+			if (product) {
+				return {
+					product_name: product.product_name || "",
+					image: product.image_url || "",
+					description: product.description || "",
+					price: product.price?.toString() || "",
+					product_link: product.product_url || "",
+				};
+			}
+
+			return null;
 		} catch (error) {
-			console.error("Error in product consultant:", error);
-			return {
-				product_name: "",
-				image: "",
-				description: "",
-				price: "",
-				product_link: "",
-			};
+			console.error("Error fetching product from database:", error);
+			return null;
 		}
 	}
 
@@ -459,11 +528,18 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 		});
 
 		try {
+			const supervisorStartTime = Date.now();
 			const response = await openai.responses.create({
 				model: "gpt-4o",
 				tools,
 				input,
 			});
+			const supervisorEndTime = Date.now();
+			console.log(
+				"Supervisor time taken:",
+				(supervisorEndTime - supervisorStartTime) / 1000,
+				"seconds"
+			);
 
 			let toolUsed = false;
 			for (const toolCall of response.output) {
@@ -492,11 +568,18 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 
 				if (toolUsed) {
 					// Send the function result back to the model
+					const finalResponseStartTime = Date.now();
 					const finalResponse = await openai.responses.create({
 						model: "gpt-4o",
 						input,
 						tools,
 					});
+					const finalResponseEndTime = Date.now();
+					console.log(
+						"Final response time taken:",
+						(finalResponseEndTime - finalResponseStartTime) / 1000,
+						"seconds"
+					);
 					response.output_text = finalResponse.output_text;
 				}
 			}
@@ -580,30 +663,59 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 	async function getAllRecommendations(healthInfo: string) {
 		// console.log("healthInfo", healthInfo);
 		// // Arrays to store each type of recommendation
+		const nutraceuticalRecommendationsStartTime = Date.now();
 		const nutraceuticalRecommendationsArray = await getNutraceuticals(healthInfo);
+		const nutraceuticalRecommendationsEndTime = Date.now();
+		console.log(
+			"Nutraceutical recommendations time taken:",
+			(nutraceuticalRecommendationsEndTime - nutraceuticalRecommendationsStartTime) / 1000,
+			"seconds"
+		);
 
 		const productRecommendationsArray: ProductRecommendation[] = [];
 		const educationalVideosArray: EducationalVideo[] = [];
 
 		// Step 2: Get educational videos and product recommendations for each supplement
 		// We use Promise.all to run these requests in parallel
+		const videoAndProductRecommendationsStartTime = Date.now();
 		await Promise.all(
 			nutraceuticalRecommendationsArray.map(async (supplement: NutraceuticalRecommendation) => {
 				// Get videos for this supplement
-				// const video = await getYoutubeVideo(supplement.nutraceutical_name);
-				// if (video) {
-				// 	educationalVideosArray.push(video);
-				// }
+				const video = await getYoutubeVideo("benefits of " + supplement.nutraceutical_name);
+				if (video) {
+					educationalVideosArray.push(video);
+				}
+
+				// normalize the nutraceutical name
+				const normalizedNutraceuticalName = normalizeProductName(supplement.nutraceutical_name);
+
+				// loop through the popular_abbreviation array and normalize the name and add to a new array
+				const normalizedAbbreviations: string[] = [];
+				for (const abbreviation of supplement.popular_abbreviation) {
+					const normalizedAbbreviation = normalizeProductName(abbreviation);
+					normalizedAbbreviations.push(normalizedAbbreviation);
+				}
+
+				// console.log("normalizedAbbreviations==="+JSON.stringify(normalizedAbbreviations));
+				// console.log("normalizedNutraceuticalName==="+normalizedNutraceuticalName);
+				// console.log("supplement.user_gender_preference==="+supplement.user_gender_preference);
 
 				// Get products for this supplement
-				const product = await getProductsRecommendations(
-					supplement.nutraceutical_name,
-					supplement.user_gender
+				const product = await getProductsRecommendationsFromDatabase(
+					normalizedNutraceuticalName,
+					supplement.user_gender_preference,
+					normalizedAbbreviations
 				);
 				if (product) {
 					productRecommendationsArray.push(product);
 				}
 			})
+		);
+		const videoAndProductRecommendationsEndTime = Date.now();
+		console.log(
+			"Video and product recommendations time taken:",
+			(videoAndProductRecommendationsEndTime - videoAndProductRecommendationsStartTime) / 1000,
+			"seconds"
 		);
 
 		// educationalVideosArray.push(
@@ -656,5 +768,15 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 		}
 
 		return formattedResponse;
+	}
+
+	function normalizeProductName(productName: string) {
+		if (!productName || typeof productName !== "string") return "";
+
+		return productName
+			.toLowerCase()
+			.trim()
+			.replace(/[^a-z0-9 ]/gi, "") // remove all special characters
+			.replace(/\s+/g, " "); // normalize multiple spaces to one
 	}
 }

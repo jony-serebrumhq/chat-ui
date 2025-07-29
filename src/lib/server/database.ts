@@ -19,6 +19,7 @@ import { logger } from "$lib/server/logger";
 import { building } from "$app/environment";
 import type { TokenCache } from "$lib/types/TokenCache";
 import { onExit } from "./exitHandler";
+import type { Product } from "$lib/types/Product";
 
 export const CONVERSATION_STATS_COLLECTION = "conversations.stats";
 
@@ -88,6 +89,7 @@ export class Database {
 		const semaphores = db.collection<Semaphore>("semaphores");
 		const tokenCaches = db.collection<TokenCache>("tokens");
 		const tools = db.collection<CommunityToolDB>("tools");
+		const products = db.collection<Product>("products");
 
 		return {
 			conversations,
@@ -106,6 +108,7 @@ export class Database {
 			semaphores,
 			tokenCaches,
 			tools,
+			products,
 		};
 	}
 
@@ -129,6 +132,7 @@ export class Database {
 			semaphores,
 			tokenCaches,
 			tools,
+			products,
 		} = this.getCollections();
 
 		conversations
@@ -242,6 +246,8 @@ export class Database {
 				sessionId: 1,
 			})
 			.catch((e) => logger.error(e));
+
+		products.createIndex({ normalized_product_name: 1 }).catch((e) => logger.error(e));
 	}
 }
 

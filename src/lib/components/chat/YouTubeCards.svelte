@@ -21,7 +21,7 @@
 <div class="my-4 w-full">
     <div class="scrollbar-custom flex overflow-x-auto pb-4 space-x-4 snap-x">
         {#each videos as video}
-            {@const videoId = getYouTubeVideoId(video.video_link)}
+            {@const videoId = video.video_link}
             {#if videoId}
                 <div class="snap-start flex-shrink-0 w-72 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div class="w-full">
