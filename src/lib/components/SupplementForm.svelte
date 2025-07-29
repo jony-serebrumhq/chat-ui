@@ -456,11 +456,12 @@ ${additionalInfo || 'None'}
                     <div class="accordion-inner border-t dark:border-gray-700">
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-2">
-                                <label class="text-sm text-gray-600 dark:text-gray-400">Do you have any existing health conditions?</label>
+                                <label class="text-sm text-gray-600 dark:text-gray-400" for="healthConditionOption">Do you have any existing health conditions?</label>
                                 <div class="flex flex-col gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-3">
                                     {#each healthConditionOptions as option}
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <input 
+                                                id="healthConditionOption"
                                                 type="checkbox" 
                                                 value={option}
                                                 checked={healthConditions.includes(option)}
@@ -529,7 +530,7 @@ ${additionalInfo || 'None'}
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('lifestyleActivity')}
+                    onclick={() => toggleSection('lifestyleActivity')}
                 >
                     <span class="font-medium">Lifestyle and Activity</span>
                     <span class="chevron transform {openSections.lifestyleActivity ? 'rotate-180' : ''}">▼</span>
@@ -561,7 +562,7 @@ ${additionalInfo || 'None'}
                                     multiple
                                     size="4"
                                     class="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
-                                    on:change={(e) => exerciseTypes = handleMultiSelect(e, exerciseTypeOptions, exerciseTypes)}
+                                    onchange={(e) => exerciseTypes = handleMultiSelect(e, exerciseTypeOptions, exerciseTypes)}
                                 >
                                     {#each exerciseTypeOptions as option}
                                         <option 
@@ -584,7 +585,7 @@ ${additionalInfo || 'None'}
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('preferences')}
+                    onclick={() => toggleSection('preferences')}
                 >
                     <span class="font-medium">Preferences</span>
                     <span class="chevron transform {openSections.preferences ? 'rotate-180' : ''}">▼</span>
@@ -645,7 +646,7 @@ ${additionalInfo || 'None'}
                 <!-- <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('additionalInfo')}
+                    onclick={() => toggleSection('additionalInfo')}
                 >
                     <span class="font-medium">Additional Information</span>
                     <span class="chevron transform {openSections.additionalInfo ? 'rotate-180' : ''}">▼</span>

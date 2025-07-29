@@ -109,7 +109,7 @@ Diet Preference: ${dietPreference}`;
         </div>
 
         <form 
-            on:submit={handleSubmit} 
+            onsubmit={handleSubmit} 
             class="flex flex-1 flex-col gap-4 overflow-y-auto custom-scrollbar p-4 pt-0"
         >
             <!-- Section 1: Basic Info -->
@@ -117,7 +117,7 @@ Diet Preference: ${dietPreference}`;
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('basicInfo')}
+                    onclick={() => toggleSection('basicInfo')}
                 >
                     <span class="font-medium">Basic Information</span>
                     <span class="chevron transform {openSections.basicInfo ? 'rotate-180' : ''}">▼</span>
@@ -162,7 +162,7 @@ Diet Preference: ${dietPreference}`;
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('weightInfo')}
+                    onclick={() => toggleSection('weightInfo')}
                 >
                     <span class="font-medium">Weight Information</span>
                     <span class="chevron transform {openSections.weightInfo ? 'rotate-180' : ''}">▼</span>
@@ -207,7 +207,7 @@ Diet Preference: ${dietPreference}`;
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('preferences')}
+                    onclick={() => toggleSection('preferences')}
                 >
                     <span class="font-medium">Preferences</span>
                     <span class="chevron transform {openSections.preferences ? 'rotate-180' : ''}">▼</span>
@@ -254,7 +254,7 @@ Diet Preference: ${dietPreference}`;
                 <button
                     type="button"
                     class="w-full px-4 py-2 text-left flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    on:click={() => toggleSection('medicalConditions')}
+                    onclick={() => toggleSection('medicalConditions')}
                 >
                     <span class="font-medium">Medical Conditions</span>
                     <span class="chevron transform {openSections.medicalConditions ? 'rotate-180' : ''}">▼</span>

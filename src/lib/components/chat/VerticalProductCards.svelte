@@ -82,7 +82,7 @@
                             src={product.image} 
                             alt={product.product_name}
                             class="max-w-full max-h-40 object-contain p-2 product-image"
-                            on:error={handleImageError}
+                            onerror={handleImageError}
                         />
                     </div>
                     <div class="p-4 flex flex-col flex-grow">
