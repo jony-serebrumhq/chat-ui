@@ -24,10 +24,10 @@ interface YouTubeSearchError extends Error {
  * @param {RetryOptions} retryOptions - Retry configuration options.
  * @returns {Promise<string | null>} - YouTube video ID or null if not found.
  */
-async function searchYouTubeVideoId(
+async function searchYouTubeVideo(
 	query: string,
 	retryOptions: RetryOptions = {}
-): Promise<string | null> {
+): Promise<{ videoId: string; videoTitle: string | null } | null> {
 	const { maxRetries = 3, baseDelay = 1000, maxDelay = 10000 } = retryOptions;
 
 	if (!query || query.trim() === "") {
@@ -46,7 +46,7 @@ async function searchYouTubeVideoId(
 
 			const response = await youtube.search.list({
 				q: query.trim(),
-				part: ["id"],
+				part: ["id", "snippet"],
 				type: ["video"],
 				maxResults: 1,
 				safeSearch: "moderate",
@@ -61,12 +61,14 @@ async function searchYouTubeVideoId(
 			}
 
 			const videoId = videos[0]?.id?.videoId;
+			const videoTitle = videos[0]?.snippet?.title;
+
 			if (!videoId) {
 				console.warn("Video found but no videoId available");
 				return null;
 			}
 
-			return videoId;
+			return { videoId, videoTitle };
 		} catch (error: unknown) {
 			const youtubeError = error as YouTubeSearchError;
 
@@ -95,4 +97,4 @@ async function searchYouTubeVideoId(
 	return null;
 }
 
-export { searchYouTubeVideoId };
+export { searchYouTubeVideo };

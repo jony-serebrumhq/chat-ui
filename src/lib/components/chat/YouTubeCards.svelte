@@ -2,6 +2,7 @@
     interface EducationalVideo {
         nutraceutical_name: string;
         video_link: string;
+        video_title: string;
     }
 
     interface Props {
@@ -29,7 +30,7 @@
                             width="100%"
                             height="200"
                             src="https://www.youtube.com/embed/{videoId}"
-                            title={video.nutraceutical_name}
+                            title={video.video_title}
                             frameborder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen

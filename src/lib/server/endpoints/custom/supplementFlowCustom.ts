@@ -3,7 +3,7 @@ import type { Endpoint } from "../endpoints";
 import type { TextGenerationStreamOutput } from "@huggingface/inference";
 import { OpenAI } from "openai";
 import { collections } from "$lib/server/database";
-import { searchYouTubeVideoId } from "$lib/server/tools/web/youtubeSearch";
+import { searchYouTubeVideo } from "$lib/server/tools/web/youtubeSearch";
 
 export const endpointSupplementFlowParametersSchema = z.object({
 	type: z.literal("supplementFlow"),
@@ -42,11 +42,13 @@ interface NutraceuticalRecommendation {
 	best_time_to_take: string;
 	popular_abbreviation: string[];
 	user_gender_preference: string;
+	youtube_query_string: string;
 }
 
 interface EducationalVideo {
 	nutraceutical_name: string;
 	video_link: string;
+	video_title: string;
 }
 
 interface ProductRecommendation {
@@ -313,6 +315,11 @@ export function endpointSupplementFlow(
 												enum: ["All", "Kids", "Men", "Women"],
 												description: "The user's gender preference for the supplement",
 											},
+											youtube_query_string: {
+												type: "string",
+												description:
+													"The query string to search for educational videos on YouTube regarding this supplement",
+											},
 										},
 										required: [
 											"nutraceutical_name",
@@ -322,6 +329,7 @@ export function endpointSupplementFlow(
 											"popular_abbreviation",
 											"best_time_to_take",
 											"user_gender_preference",
+											"youtube_query_string",
 										],
 									},
 								},
@@ -342,29 +350,33 @@ export function endpointSupplementFlow(
 	}
 
 	// YouTube Video Search Agent
-	async function getYoutubeVideo(supplement: string): Promise<EducationalVideo> {
+	async function getYoutubeVideo(query: string): Promise<EducationalVideo> {
 		try {
+			console.log("query===>", query);
 			const youtubeVideoSearchStartTime = Date.now();
 
-			const youtubeVideoId = await searchYouTubeVideoId(supplement);
+			const youtubeVideo = await searchYouTubeVideo(query);
 			const educationalVideo: EducationalVideo = {
-				nutraceutical_name: supplement,
-				video_link: youtubeVideoId || "",
+				nutraceutical_name: query,
+				video_link: youtubeVideo?.videoId || "",
+				video_title: youtubeVideo?.videoTitle || "Untitled Video",
 			};
 
 			const youtubeVideoSearchEndTime = Date.now();
+			console.log("youtubeVideo", youtubeVideo);
 			console.log(
 				"YouTube video search time taken:",
 				(youtubeVideoSearchEndTime - youtubeVideoSearchStartTime) / 1000,
 				"seconds"
 			);
 
-			if (youtubeVideoId) {
+			if (youtubeVideo) {
 				return educationalVideo;
 			} else {
 				return {
 					nutraceutical_name: "",
 					video_link: "",
+					video_title: "",
 				};
 			}
 		} catch (error) {
@@ -372,6 +384,7 @@ export function endpointSupplementFlow(
 			return {
 				nutraceutical_name: "",
 				video_link: "",
+				video_title: "",
 			};
 		}
 	}
@@ -681,7 +694,7 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 		await Promise.all(
 			nutraceuticalRecommendationsArray.map(async (supplement: NutraceuticalRecommendation) => {
 				// Get videos for this supplement
-				const video = await getYoutubeVideo("benefits of " + supplement.nutraceutical_name);
+				const video = await getYoutubeVideo(supplement.youtube_query_string);
 				if (video) {
 					educationalVideosArray.push(video);
 				}
