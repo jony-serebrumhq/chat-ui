@@ -12,7 +12,7 @@
 
 {#if envPublic.PUBLIC_APP_ASSETS === "chatui"}
 
-<img width="30" height="30" class={classNames} src="{envPublic.PUBLIC_ORIGIN || page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/vygor-icon.png" alt="ChatUI logo" />
+<img width="30" height="30" class={classNames} src="{envPublic.PUBLIC_ORIGIN || page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/VitaSana-icon.png" alt="Vitasana logo" />
 
 	<!-- <svg
 		height="30"

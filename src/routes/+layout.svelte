@@ -206,19 +206,19 @@
 	<link
 		rel="icon"
 		href="{envPublic.PUBLIC_ORIGIN ||
-			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/converted_icon.ico"
+			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/VitaSana-icon.png"
 		sizes="32x32"
 	/>
 	<link
 		rel="icon"
 		href="{envPublic.PUBLIC_ORIGIN ||
-			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/converted_icon.ico"
+			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/VitaSana-icon.png"
 		type="image/svg+xml"
 	/>
 	<link
 		rel="apple-touch-icon"
 		href="{envPublic.PUBLIC_ORIGIN ||
-			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/converted_icon.ico"
+			$page.url.origin}{base}/{envPublic.PUBLIC_APP_ASSETS}/VitaSana-icon.png"
 	/>
 	<link
 		rel="manifest"

@@ -23,7 +23,7 @@
 </script>
 
 <div class="my-auto grid gap-8 lg:grid-cols-3">
-	<div class="lg:col-span-1 lg:mt-6">
+	<div class="lg:col-span-3 lg:mt-6">
 		<div>
 			<div class="mb-3 flex items-center text-2xl font-semibold">
 				<Logo classNames="mr-1 flex-none" />
@@ -34,9 +34,9 @@
 					v{envPublic.PUBLIC_VERSION}
 				</div> -->
 			</div>
-			<p class="text-base text-gray-600 dark:text-gray-400">
+			<p class="text-base leading-relaxed text-gray-600 dark:text-gray-400 whitespace-pre-wrap break-words">
 				{envPublic.PUBLIC_APP_DESCRIPTION ||
-					"Making the community's best AI chat models available to everyone."}
+					""}
 			</p>
 		</div>
 	</div>
