@@ -42,6 +42,7 @@ interface NutraceuticalRecommendation {
 	best_time_to_take: string;
 	popular_abbreviation: string[];
 	user_gender_preference: string;
+	rank: number;
 	youtube_query_string: string;
 }
 
@@ -68,6 +69,15 @@ export function endpointSupplementFlow(
 	const openai = new OpenAI({
 		apiKey: openaiApiKey,
 	});
+
+	// Generate OpenAI embedding for a given text
+	async function getOpenAIEmbedding(text: string): Promise<number[]> {
+		const response = await openai.embeddings.create({
+			model: "text-embedding-3-small",
+			input: text,
+		});
+		return response.data[0].embedding as unknown as number[];
+	}
 
 	const tools = [
 		{
@@ -271,7 +281,7 @@ export function endpointSupplementFlow(
 						content: [
 							{
 								type: "input_text",
-								text: "You are a knowledgeable supplement advisor. Based solely on the user’s profile — and only recommending supplements appropriate for their gender — suggest the **five best** supplements, ranked most → least important. Respond strictly in JSON format.",
+								text: "You are a knowledgeable supplement advisor. Based solely on the user’s profile — and only recommending supplements appropriate for their gender — suggest the **five best** supplements, ranked based on popularity and effectiveness in sorted order. Respond strictly in JSON format.",
 							},
 						],
 					},
@@ -315,6 +325,12 @@ export function endpointSupplementFlow(
 												enum: ["All", "Kids", "Men", "Women"],
 												description: "The user's gender preference for the supplement",
 											},
+											rank: {
+												type: "number",
+												enum: [1, 2, 3, 4, 5],
+												description:
+													"Rank of the supplement based on popularity and effectiveness in sorted order. 1 is the most important and 5 is the least important.",
+											},
 											youtube_query_string: {
 												type: "string",
 												description:
@@ -329,6 +345,7 @@ export function endpointSupplementFlow(
 											"popular_abbreviation",
 											"best_time_to_take",
 											"user_gender_preference",
+											"rank",
 											"youtube_query_string",
 										],
 									},
@@ -448,42 +465,65 @@ export function endpointSupplementFlow(
 	// Product Consultant Agent
 	async function getProductsRecommendationsFromDatabase(
 		supplement: string,
-		gender: string,
-		popular_abbreviation: string[]
+		gender: string
 	): Promise<ProductRecommendation | null> {
 		try {
-			// if gender is not All, then filter by All or the gender
-			let product = null;
-			if (gender !== "All") {
-				product = await collections.products.findOne({
-					normalized_product_name: { $regex: new RegExp(supplement) },
+			// Build query embedding for vector search using OpenAI embeddings
+			const queryEmbedding = await getOpenAIEmbedding(supplement);
+
+			// Build the vector search stage
+			const vectorSearchStage: {
+				$vectorSearch: {
+					index: string;
+					path: string;
+					queryVector: number[];
+					numCandidates: number;
+					limit: number;
+					filter?: {
+						$or: { gender: string }[];
+					};
+				};
+			} = {
+				$vectorSearch: {
+					index: "vector_index",
+					path: "vector_embedding",
+					queryVector: queryEmbedding,
+					numCandidates: 400,
+					limit: 1,
+				},
+			};
+
+			// Add gender filter same as existing logic: specific gender OR 'All'
+			if (gender && gender !== "All") {
+				vectorSearchStage["$vectorSearch"]["filter"] = {
 					$or: [{ gender }, { gender: "All" }],
-				});
-
-				if (!product) {
-					product = await collections.products.findOne({
-						$or: popular_abbreviation.map((abbreviation) => ({
-							normalized_product_name: { $regex: new RegExp(abbreviation) },
-							$or: [{ gender }, { gender: "All" }],
-						})),
-					});
-				}
-			} else {
-				product = await collections.products.findOne({
-					normalized_product_name: { $regex: new RegExp(supplement) },
-				});
-
-				if (!product) {
-					product = await collections.products.findOne({
-						$or: popular_abbreviation.map((abbreviation) => ({
-							normalized_product_name: { $regex: new RegExp(abbreviation) },
-						})),
-					});
-				}
+				};
 			}
 
-			// if product is found, return the product
-			if (product) {
+			const results = await collections.products
+				.aggregate([
+					vectorSearchStage,
+					{
+						$project: {
+							product_name: 1,
+							gender: 1,
+							price: 1,
+							description: 1,
+							image_url: 1,
+							product_url: 1,
+							score: { $meta: "vectorSearchScore" },
+						},
+					},
+					{
+						$match: {
+							score: { $gte: 0.75 },
+						},
+					},
+				])
+				.toArray();
+
+			if (results.length > 0) {
+				const product = results[0];
 				return {
 					product_name: product.product_name || "",
 					image: product.image_url || "",
@@ -716,8 +756,7 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 				// Get products for this supplement
 				const product = await getProductsRecommendationsFromDatabase(
 					normalizedNutraceuticalName,
-					supplement.user_gender_preference,
-					normalizedAbbreviations
+					supplement.user_gender_preference
 				);
 				if (product) {
 					productRecommendationsArray.push(product);

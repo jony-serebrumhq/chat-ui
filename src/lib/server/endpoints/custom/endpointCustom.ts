@@ -40,7 +40,10 @@ export function endpointCustom(input: z.input<typeof endpointCustomParametersSch
 		});
 
 		if (!r.ok) {
-			throw new Error(`Failed to generate text: ${await r.text()}`);
+			const bodyText = await r.text().catch(() => "");
+			throw new Error(
+				`Failed to generate text: ${r.status} ${r.statusText} for ${url}\n${bodyText}\n`
+			);
 		}
 
 		const response = await r.json();
