@@ -744,6 +744,7 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 
 				// loop through the popular_abbreviation array and normalize the name and add to a new array
 				const normalizedAbbreviations: string[] = [];
+				normalizedAbbreviations.push(normalizedNutraceuticalName);
 				for (const abbreviation of supplement.popular_abbreviation) {
 					const normalizedAbbreviation = normalizeProductName(abbreviation);
 					normalizedAbbreviations.push(normalizedAbbreviation);
@@ -755,7 +756,7 @@ When you receive the tool output from getAllRecommendations, you MUST DO THE FOL
 
 				// Get products for this supplement
 				const product = await getProductsRecommendationsFromDatabase(
-					normalizedNutraceuticalName,
+					normalizedAbbreviations.join(","),
 					supplement.user_gender_preference
 				);
 				if (product) {
